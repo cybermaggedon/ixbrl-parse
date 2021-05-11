@@ -412,9 +412,8 @@ class Dimension(Relationship):
     def __str__(self):
         return("dimension(%s,%s)" % (self.dimension, self.value))
     def get_description(self):
-        return "%s\n(%s)" % (
-            self.value.localname,
-            self.dimension.localname
+        return "%s" % (
+            self.value.localname
         )
     def get_type(self):
         return DIMENSION
