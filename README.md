@@ -20,8 +20,35 @@ Also, `accts.html` is a sample file created using
 ## Installation
 
 ```
-pip3 install git+https://github.com/cybermaggedon/ixrbl-parse
+pip3 install git+https://github.com/cybermaggedon/ixbrl-parse
 ```
 
+## Usage
 
+Parse iXBRL and output in RDF (default n3 format):
+```
+ixbrl-to-rdf -i accts.html
+```
+
+Parse iXBRL and output in RDF/XML:
+```
+ixbrl-to-rdf -i accts.html --format xml
+```
+
+Parse iXBRL and output in CSV:
+```
+ixbrl-to-csv -i accts.html
+```
+
+Dump iXBRL values:
+```
+ixbrl-dump -i accts.html
+```
+
+## API
+
+The `ixbrl-to-csv` file is a good starting point if you want to see how
+the API works.
+
+FIXME: Document the API.
 
