@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import datetime
+from lxml import etree as ET
+import sys
+import argparse
+import csv
+
+from ixbrl_parse.ixbrl import parse
+import ixbrl_parse.triples as triples
+
+maxwidth=200
+
+parser = argparse.ArgumentParser(
+    description="iXBRL parser"
+)
+parser.add_argument('--input', '-i',
+                    default="comps.html",
+                    help='Input computations file (default: comps.html)')
+parser.add_argument('--format', '-f',
+                    default="n3",
+                    help='Output format (default: n3)')
+parser.add_argument('--verbose', '-v', action='store_true',
+                    help='Turn on verbose output.')
+
+# Parse arguments
+args = parser.parse_args(sys.argv[1:])
+
+tree = ET.parse(args.input)
+
+i = parse(tree)
+if args.verbose:
+    sys.stderr.write("Read %s.\n" % args.input)
+
+fields = [
+    "namespace", "name", "value", "entity", "scheme", "start", "end",
+    "instant"
+]
+fieldset = set(fields)
+rows = []
+
+for c in i.contexts.values():
+
+    for v in c.values.values():
+
+        row = {
+            "namespace": v.name.namespace,
+            "name": v.name.localname,
+            "value": v.to_string()[:maxwidth]
+        }
+
+        if c.entity:
+            row["entity"] = c.entity.id
+            row["scheme"] = c.entity.scheme
+
+        if c.period:
+            row["start"] = c.period.start
+            row["end"] = c.period.end
+
+        if c.instant:
+            row["instant"] = c.instant.instant
+
+        for dim in c.dimensions:
+
+            d = dim.dimension.localname
+            v = dim.value.localname
+
+            if d not in fieldset:
+                fields.append(d)
+                fieldset.add(d)
+
+            row[d] = v
+
+        rows.append(row)
+
+writer = csv.DictWriter(sys.stdout, fields)
+writer.writeheader()
+
+for row in rows:
+    writer.writerow(row)
+

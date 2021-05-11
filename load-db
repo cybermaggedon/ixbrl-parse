@@ -1,0 +1,6 @@
+#!/bin/bash
+
+./ixbrl-to-rdf -i $1 | \
+    rapper -i ntriples -o rdfxml - http://0 | \
+    rdfproc -s sqlite accts.db parse /dev/fd/0 rdfxml
+

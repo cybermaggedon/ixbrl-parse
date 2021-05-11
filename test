@@ -1,0 +1,11 @@
+#!/bin/bash
+
+find ixbrl -type f | while read file
+do
+  echo $file...
+  scripts/ixbrl-to-rdf -i $file > /dev/null
+  if [[ $? -ne 0 ]]
+  then
+    break
+  fi
+done

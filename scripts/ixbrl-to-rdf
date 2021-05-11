@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import datetime
+from lxml import etree as ET
+import sys
+import argparse
+
+from rdflib import Graph, Literal, RDF, URIRef
+from rdflib.namespace import XSD
+
+from ixbrl_parse.ixbrl import parse
+import ixbrl_parse.triples as triples
+
+maxwidth=40
+
+parser = argparse.ArgumentParser(
+    description="iXBRL parser"
+)
+parser.add_argument('--input', '-i',
+                    default="comps.html",
+                    help='Input computations file (default: comps.html)')
+parser.add_argument('--format', '-f',
+                    default="n3",
+                    help='Output format (default: n3)')
+parser.add_argument('--verbose', '-v', action='store_true',
+                    help='Turn on verbose output.')
+
+# Parse arguments
+args = parser.parse_args(sys.argv[1:])
+
+tree = ET.parse(args.input)
+
+i = parse(tree)
+if args.verbose:
+    sys.stderr.write("Read %s.\n" % args.input)
+
+rels = i.get_triples()
+
+g = Graph()
+
+for rel in rels:
+    if isinstance(rel[2], triples.Uri):
+        g.add((
+            URIRef(rel[0].uri), URIRef(rel[1].uri), URIRef(rel[2].uri)
+        ))
+    else:
+        g.add((
+            URIRef(rel[0].uri), URIRef(rel[1].uri),
+            Literal(rel[2].value, datatype=XSD.string)
+        ))
+
+print(g.serialize(format=args.format).decode("utf-8"))
+

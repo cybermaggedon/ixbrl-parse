@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+import datetime
+from lxml import etree as ET
+import sys
+import argparse
+
+from computations import get_computations
+
+parser = argparse.ArgumentParser(
+    description="iXBRL parser"
+)
+parser.add_argument('--input', '-i',
+                    default="comps.html",
+                    help='Input computations file (default: comps.html)')
+parser.add_argument('--verbose', '-v', action='store_true',
+                    help='Turn on verbose output.')
+
+# Parse arguments
+args = parser.parse_args(sys.argv[1:])
+
+#namespaces = {
+#    "": 
+#}
+ns = {
+    "ix": "http://www.xbrl.org/2013/inlineXBRL",
+    "xbrli": "http://www.xbrl.org/2003/instance"
+}
+
+tree = ET.parse(args.input)
+
+ns = tree.getroot().nsmap
+#print(ns["dei"])
+
+#for elt in tree.findall(".//ix:nonNumeric", ns):
+#    print(elt.tag)
+
+#     ns = elt.nsmap
+#     nameval = elt.get("name")
+
+#     namens = ns[nameval.split(":")[0]]
+#     namename = nameval.split(":")[1]
+#     nq = ET.QName(namens, namename)
+#     print("  ", nq)
+
+#sys.exit(0)
+
+values = get_computations(tree)
+sys.stderr.write("Read %s.\n" % args.input)
+
+if args.verbose:
+    for k, v in values.items():
+        v.dump()
+

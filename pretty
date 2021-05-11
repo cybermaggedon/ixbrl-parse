@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+import lxml.etree as ET
+import sys
+import io
+
+f = ET.parse(sys.stdin)
+
+buf = io.BytesIO()
+
+f.write(buf, encoding="utf-8", pretty_print=True)
+
+print(buf.getvalue().decode("utf-8"))

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -f accts.db
+
+rdfproc -n -s sqlite accts.db parse /dev/null ntriples
+
