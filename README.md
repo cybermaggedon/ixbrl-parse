@@ -52,7 +52,7 @@ the API works.
 
 FIXME: Document the API.
 
-## Doing other stuff with the RDF
+## What next?
 
 This loads into a Redland RDF sqlite3 store:
 
@@ -61,4 +61,12 @@ ixbrl-to-rdf -i accts.html -f ntriples > accts.ntriples
 rdfproc -n -s sqlite accts.db parse accts.ntriples ntriples
 rdfproc -s sqlite accts.db print | head
 ```
+
+I run a SPARQL store across the data, and view it with
+[LodLive](https://github.com/LodLive/LodLive).
+
+Share and Enjoy!
+
+![Screenshot of LodLive](docs/screenshot.png)
+
 
