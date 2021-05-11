@@ -52,3 +52,13 @@ the API works.
 
 FIXME: Document the API.
 
+## Doing other stuff with the RDF
+
+This loads into a Redland RDF sqlite3 store:
+
+```
+ixbrl-to-rdf -i accts.html -f ntriples > accts.ntriples
+rdfproc -n -s sqlite accts.db parse accts.ntriples ntriples
+rdfproc -s sqlite accts.db print | head
+```
+
