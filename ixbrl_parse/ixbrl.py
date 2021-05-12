@@ -1,4 +1,10 @@
 
+"""iXBRL parser and parser output objects
+
+Call the parse function to parse an lxml ElementTree, returns an Ixbrl
+object.
+"""
+
 from lxml import etree as ET
 import datetime
 import sys
@@ -29,10 +35,9 @@ ENTITY = triples.Uri(LOCAL + "t#entity")
 PERIOD = triples.Uri(LOCAL + "t#period")
 INSTANT = triples.Uri(LOCAL + "t#instant")
 
-
-# FIXME: MD5 seems a bit light.
+# Create a hex hash, short-hand
 def create_hash(thing):
-    hash = hashlib.md5(str(thing).encode("utf-8"))
+    hash = hashlib.sha1(str(thing).encode("utf-8"))
     return hash.hexdigest()
 
 def to_qname(elt, name):
@@ -40,13 +45,19 @@ def to_qname(elt, name):
     ns = elt.nsmap[ns]
     return ET.QName(ns, name)
 
-class Measure:
+class Unit:
+    """A unit"""
+    pass
+
+class Measure(Unit):
+    """A simple measurement unit"""
     def __init__(self, measure):
         self.measure = measure
     def __str__(self):
         return str(self.measure)
 
-class Divide:
+class Divide(Unit):
+    """A unit formed by dividing two measurements"""
     def __init__(self, num, den):
         self.num = num
         self.den = den
@@ -54,6 +65,62 @@ class Divide:
         return str(self.num) + "/" + str(self.den)
 
 class Context:
+    """An iXBRL context
+
+    Attributes
+    ----------
+    entity : Entity
+        The context's entity (None if not specified).
+    period : Period
+        The context's date period (None if not specified).
+    instant : Period
+        The context's instant date (None if not specified).
+    dimensions : list<Dimension>
+        List of dimensions, empty list if none.
+    values : list<Value>
+        List of values defined under this context.
+    children : map<Relationship, Context>
+        Map of relationship to child context.
+
+    Methods
+    -------
+    to_string()
+        Returns a string representation of the context
+    get_uri()
+        Constructs a URI for the context which is usable in e.g. RDF
+        output
+    get_triples()
+        Converts a context into RDF triples. Returns a list of 3-tuples,
+        each describing an RDF arc associated with the context.
+        The first two elements of the 3-tuple are triples.Uri type,
+        the second can be triples.Uri or triples.String.
+
+    This module organises contexts as a hierarchy, each context 
+    connected to its parent through a Relationship which is a single 
+    fragment of the iXBRL context (Entity, Period, Instant, Dimension).
+
+    Example, if there are 3 contexts:
+    - C01: entity X, period S - D, dimension D1 = V1
+    - C02: entity X, period S - D, dimension D2 = V2
+    - C03: entity X, instant I, dimension D3 = V3
+
+    They would be organised:
+
+                                root
+                                  |
+                                  |  relationship: Entity X
+                                  |
+                                 C01
+                                  |
+               ,------------------+---------------.
+               |                                  |
+               | rel: period S-D                  | rel: instant I
+               |                                  |
+              C02                                C03
+
+    Navigate from one context to another through the children attribute
+
+    """
     def __init__(self):
         self.entity = None
         self.period = None
@@ -77,7 +144,6 @@ class Context:
             self.instant = rel
         elif isinstance(rel, Dimension):
             self.dimensions.append(rel)
-            
     def to_dict(self):
         ret = {}
         if self.entity:
@@ -89,7 +155,12 @@ class Context:
         if len(self.dimensions) > 0:
             ret["dimensions"] = self.dimensions
         return ret
+    def to_string(self):
+        """Returns a string representation of the context"""
+        val = self.to_dict()
+        return str(val)
     def __str__(self):
+        """Returns a string representation of the context"""
         val = self.to_dict()
         return str(val)
     def __repr__(self):
@@ -105,7 +176,6 @@ class Context:
             print("    Instant:", self.instant)
         for d in self.dimensions:
             print("    %s: %s" % (d.dimension, d.value))
-
     def get_relationships(self):
 
         rels = []
@@ -125,8 +195,11 @@ class Context:
         rels = self.get_relationships()
         rep = "//".join([str(v) for v in rels])
         return create_hash(rep)
-        
+
     def get_uri(self):
+        """Constructs a URI for the context which is usable in e.g. RDF
+        output
+        """
         rels = self.get_relationships()
 
         if len(rels) == 0: return "http://local/root"
@@ -139,6 +212,12 @@ class Context:
         return url
 
     def get_triples(self, rel=None, entity_name=None):
+        """
+        Converts a context into RDF triples. Returns a list of 3-tuples,
+        each describing an RDF arc associated with the context.
+        The first two elements of the 3-tuple are triples.Uri type,
+        the second can be triples.Uri or triples.String.
+        """
 
         tpl = []
 
@@ -219,7 +298,7 @@ class Context:
         tpl.extend(self.get_value_triples())
 
         return tpl
-            
+
     def get_value_triples(self):
 
         tpl = []
@@ -257,6 +336,7 @@ class Context:
         return tpl
 
 class Value:
+    """An iXBRL value"""
     def __init__(self):
         self.value = None
         self.context = None
@@ -280,27 +360,30 @@ def recurse_elts(elt, lower=False):
     return a
 
 class NonNumeric(Value):
+    """Represents an iXBRL nonNumeric value"""
 
     def to_value(self):
         value = ""
         for elt in self.elements:
             value += recurse_elts(elt)
-        
+
         if hasattr(self, "format") and self.format:
             value = transform.transform(self, value)
 
         return value
 
     def to_string(self):
+        """Represent as string"""
         return str(self.to_value())
 
     def __str__(self):
         return self.to_string()
-            
+
     def __repr__(self):
         return str(self)
 
 class NonFraction(Value):
+    """Represents an iXBRL nonFraction value"""
 
     def to_value(self):
 
@@ -320,10 +403,11 @@ class NonFraction(Value):
         if self.scale != 1:
             value = float(value) * self.scale
             value = str(value)
-        
+
         return value
 
     def to_string(self):
+        """Represent as string"""
         return str(self.to_value())
 
     def __str__(self):
@@ -333,8 +417,10 @@ class NonFraction(Value):
         return str(self)
 
 class Fraction(Value):
+    """Represents an iXBRL fraction value: Not implemented"""
 
     def to_string(self):
+        """Represent as string"""
         raise RuntimeError("Not implemented: Fraction")
 
     def __str__(self):
@@ -344,6 +430,8 @@ class Fraction(Value):
         return str(self)
 
 class Relationship:
+    """Represents a single fragment of the context definition.
+    """
     def __repr__(self):
         return str(self)
     def __hash__(self):
@@ -357,6 +445,7 @@ class Relationship:
         return str(self)
 
 class Entity(Relationship):
+    """Describes the entity definition of a context."""
     def __init__(self, id, scheme):
         self.id = id
         self.scheme = scheme
@@ -380,6 +469,7 @@ class Entity(Relationship):
         return "/" + create_hash(self.scheme)[0:4] + "/" + self.id
 
 class Period(Relationship):
+    """Describes the period definition of a context."""
     def __init__(self, start, end):
         self.start, self.end = start, end
     def __str__(self):
@@ -394,6 +484,7 @@ class Period(Relationship):
         return "/%s-%s" % (self.start, self.end)
 
 class Instant(Relationship):
+    """Describes the period instant definition of a context."""
     def __init__(self, instant):
         self.instant = instant
     def __str__(self):
@@ -406,6 +497,7 @@ class Instant(Relationship):
         return "/%s" % (self.instant)
 
 class Dimension(Relationship):
+    """Describes a single dimension definition of a context."""
     def __init__(self, dimension, value):
         self.dimension = dimension
         self.value = value
@@ -427,9 +519,20 @@ class Dimension(Relationship):
         return triples.Uri("%s#%s" % (
             self.value.namespace, self.value.localname
         ))
-        
+
 
 class Ixbrl:
+    """
+    Attributes
+    ----------
+
+    root : Context
+        Root context
+    contexts : map<id, Context>
+        Map of iXBRL context identifier to context
+    values : list<Value>
+        List of values
+    """
 
     def __init__(self):
         self.root = Context()
@@ -441,7 +544,7 @@ class Ixbrl:
     def get_context(self, rels):
 
         cx = self.root
-        
+
         for rel in rels:
             cx = self.lookup_context(cx, rel)
 
@@ -497,11 +600,18 @@ class Ixbrl:
         return None
 
     def get_triples(self):
+        """Return a list of RDF triples."""
         return self.root.get_triples(None, self.get_entity_name())
 
 # Takes an ElementTree document and extracts a dict mapping iXBRL tag names
 # to values.
 def parse(doc):
+    """ Parses an lxml ElementTree containing an iXBRL document.
+
+    Returns
+    -------
+    An Ixbrl object.
+    """
 
     i = Ixbrl()
 
@@ -680,11 +790,10 @@ def parse(doc):
         for s in elt:
             continuation[cid].elements.append(s)
         continuation[cont] = continuation[cid]
-        
+
 
     i.units = units
     i.values = values
     i.contexts = contexts
-    
-    return i
 
+    return i

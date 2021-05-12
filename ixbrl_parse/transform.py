@@ -1,4 +1,9 @@
 
+# 
+# Implements some iXBRL transformations.  Internal, not expected to be called
+# by the API user.
+#
+
 from lxml import etree as ET
 import datetime
 import number_parser
