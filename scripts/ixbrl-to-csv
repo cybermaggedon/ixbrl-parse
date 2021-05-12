@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+"""Reads an iXBRL file on input, and outputs a CSV representation.
+"""
+
 import datetime
 from lxml import etree as ET
 import sys
@@ -12,14 +15,11 @@ import ixbrl_parse.triples as triples
 maxwidth=200
 
 parser = argparse.ArgumentParser(
-    description="iXBRL parser"
+    description=__doc__
 )
 parser.add_argument('--input', '-i',
-                    default="comps.html",
-                    help='Input computations file (default: comps.html)')
-parser.add_argument('--format', '-f',
-                    default="n3",
-                    help='Output format (default: n3)')
+                    required=True,
+                    help='Input computations file')
 parser.add_argument('--verbose', '-v', action='store_true',
                     help='Turn on verbose output.')
 
