@@ -19,7 +19,6 @@ RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
 
 LOCAL = "http://cyberapocalyp.se/xbrl/"
-ROOT = LOCAL + "root"
 
 # Relationships
 IS_A = URIRef(RDF + "type")
@@ -36,12 +35,14 @@ DATE = URIRef(LOCAL + "p#date")
 
 # Types
 CONTEXT = URIRef(LOCAL + "t#context") # Superclass
-ROOT = URIRef(LOCAL + "t#root")
 DIMENSION = URIRef(LOCAL + "t#dimension")
-SEGMENT = URIRef(LOCAL + "t#segment")
 ENTITY = URIRef(LOCAL + "t#entity")
 PERIOD = URIRef(LOCAL + "t#period")
 INSTANT = URIRef(LOCAL + "t#instant")
+ROOT = URIRef(LOCAL + "t#root")
+
+# Instances
+EVERYTHING = LOCAL + "root"
 
 # Create a hex hash, short-hand
 def create_hash(thing):
@@ -210,7 +211,7 @@ class Context:
         """
         rels = self.get_relationships()
 
-        if len(rels) == 0: return ROOT
+        if len(rels) == 0: return EVERYTHING
 
         url = LOCAL
 
@@ -244,22 +245,34 @@ class Context:
                 (DATE, IS_A, RDFS_PROPERTY),
 
                 (CONTEXT, LABEL, Literal("Context")),
+                (DIMENSION, LABEL, Literal("Dimension")),
                 (ENTITY, LABEL, Literal("Entity")),
                 (PERIOD, LABEL, Literal("Period")),
                 (INSTANT, LABEL, Literal("Instant")),
-                (DIMENSION, LABEL, Literal("Dimension")),
+                (ROOT, LABEL, Literal("Root")),
 
-                # FIXME: These are types?
                 (CONTEXT, IS_A, RDFS_CLASS),
-                (ENTITY, IS_A, RDFS_CLASS),
-                (PERIOD, IS_A, RDFS_CLASS),
-                (INSTANT, IS_A, RDFS_CLASS),
-                (DIMENSION, IS_A, RDFS_CLASS)
+                (DIMENSION, IS_A, RDFS_CLASS),
+                (ENTITY, IS_A, CONTEXT),
+                (PERIOD, IS_A, CONTEXT),
+                (INSTANT, IS_A, CONTEXT),
+                (ROOT, IS_A, CONTEXT),
+
             ])
 
         if rel == None:
             tpl.append((
                 URIRef(self.get_uri()), IS_A, ROOT
+            ))
+        elif isinstance(rel, Dimension):
+            tpl.append((
+                URIRef(self.get_uri()), IS_A, rel.get_type()
+            ))
+            tpl.append((
+                rel.get_type(), IS_A, DIMENSION
+            ))
+            tpl.append((
+                rel.get_type(), LABEL, Literal(rel.dimension.localname)
             ))
         else:
             tpl.append((
@@ -324,14 +337,6 @@ class Context:
                     URIRef(self.get_uri()),
                     rel.get_name_uri(),
                     URIRef(c.get_uri())
-                ))
-                tpl.append((
-                    rel.get_name_uri(), IS_A, SEGMENT
-                ))
-                tpl.append((
-                    rel.get_name_uri(),
-                    LABEL,
-                    Literal(rel.dimension.localname)
                 ))
 
             tpl.extend(c.get_triples(rel, entity_name))
@@ -533,7 +538,7 @@ class Dimension(Relationship):
             self.value.localname
         )
     def get_type(self):
-        return DIMENSION
+        return URIRef(self.get_name_uri())
     def url_part(self):
         return "/%s=%s" % (self.dimension.localname, self.value.localname)
     def get_name_uri(self):
