@@ -18,11 +18,12 @@ from rdflib import URIRef
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
 
-LOCAL = "http://local/"
+LOCAL = "http://cyberapocalyp.se/xbrl"
+ROOT = LOCAL + "root"
 
 # Relationships
 IS_A = URIRef(RDF + "type")
-COMMENT = URIRef(RDFS + "label")
+LABEL = URIRef(RDFS + "label")
 RDFS_CLASS = URIRef(RDFS + "Class")
 RDFS_PROPERTY = URIRef(RDFS + "Property")
 
@@ -31,13 +32,13 @@ CONTAINS = URIRef(LOCAL + "p#contains")
 REPORTS = URIRef(LOCAL + "p#reports")
 STARTS = URIRef(LOCAL + "p#starts")
 ENDS = URIRef(LOCAL + "p#ends")
-OCCURS = URIRef(LOCAL + "p#occurs")
+DATE = URIRef(LOCAL + "p#date")
 
 # Types
 CONTEXT = URIRef(LOCAL + "t#context") # Superclass
 ROOT = URIRef(LOCAL + "t#root")
-DIMENSION = URIRef(LOCAL + "t#dimension") # Terminology may be wrong here.
-AXIS = URIRef(LOCAL + "t#axis") # Terminology may be wrong here.
+DIMENSION = URIRef(LOCAL + "t#dimension")
+SEGMENT = URIRef(LOCAL + "t#segment")
 ENTITY = URIRef(LOCAL + "t#entity")
 PERIOD = URIRef(LOCAL + "t#period")
 INSTANT = URIRef(LOCAL + "t#instant")
@@ -209,9 +210,9 @@ class Context:
         """
         rels = self.get_relationships()
 
-        if len(rels) == 0: return "http://local/root"
+        if len(rels) == 0: return ROOT
 
-        url = "http://local"
+        url = LOCAL
 
         for rel in rels:
             url += rel.url_part()
@@ -230,23 +231,23 @@ class Context:
 
         if rel == None:
             tpl.extend([
-                (CONTAINS, COMMENT, Literal("contains")),
-                (REPORTS, COMMENT, Literal("reports")),
-                (STARTS, COMMENT, Literal("starts")),
-                (ENDS, COMMENT, Literal("ends")),
-                (OCCURS, COMMENT, Literal("occurs")),
+                (CONTAINS, LABEL, Literal("contains")),
+                (REPORTS, LABEL, Literal("reports")),
+                (STARTS, LABEL, Literal("starts")),
+                (ENDS, LABEL, Literal("ends")),
+                (DATE, LABEL, Literal("date")),
 
                 (CONTAINS, IS_A, RDFS_PROPERTY),
                 (REPORTS, IS_A, RDFS_PROPERTY),
                 (STARTS, IS_A, RDFS_PROPERTY),
                 (ENDS, IS_A, RDFS_PROPERTY),
-                (OCCURS, IS_A, RDFS_PROPERTY),
+                (DATE, IS_A, RDFS_PROPERTY),
 
-                (CONTEXT, COMMENT, Literal("Context")),
-                (ENTITY, COMMENT, Literal("Entity")),
-                (PERIOD, COMMENT, Literal("Period")),
-                (INSTANT, COMMENT, Literal("Instant")),
-                (DIMENSION, COMMENT, Literal("Dimension")),
+                (CONTEXT, LABEL, Literal("Context")),
+                (ENTITY, LABEL, Literal("Entity")),
+                (PERIOD, LABEL, Literal("Period")),
+                (INSTANT, LABEL, Literal("Instant")),
+                (DIMENSION, LABEL, Literal("Dimension")),
 
                 # FIXME: These are types?
                 (CONTEXT, IS_A, RDFS_CLASS),
@@ -268,19 +269,19 @@ class Context:
         if rel == None:
             tpl.append((
                 URIRef(self.get_uri()),
-                COMMENT,
+                LABEL,
                 Literal("everything")
             ))
         elif isinstance(rel, Entity) and entity_name != None:
             tpl.append((
                 URIRef(self.get_uri()),
-                COMMENT,
+                LABEL,
                 Literal(entity_name)
             ))
         else:
             tpl.append((
                 URIRef(self.get_uri()),
-                COMMENT,
+                LABEL,
                 Literal(rel.get_description())
             ))
 
@@ -315,7 +316,7 @@ class Context:
                 ))
                 tpl.append((
                     URIRef(c.get_uri()),
-                    OCCURS,
+                    DATE,
                     rel.get_date().to_rdf()
                 ))
             elif isinstance(rel, Dimension):
@@ -325,11 +326,11 @@ class Context:
                     URIRef(c.get_uri())
                 ))
                 tpl.append((
-                    rel.get_name_uri(), IS_A, AXIS
+                    rel.get_name_uri(), IS_A, SEGMENT
                 ))
                 tpl.append((
                     rel.get_name_uri(),
-                    COMMENT,
+                    LABEL,
                     Literal(rel.dimension.localname)
                 ))
 
@@ -369,7 +370,7 @@ class Context:
 
             tpl.append((
                 URIRef("%s#%s" % (name.namespace, name.localname)),
-                COMMENT,
+                LABEL,
                 Literal(name.localname)
             ))
 
