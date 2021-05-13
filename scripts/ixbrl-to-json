@@ -19,11 +19,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--input', '-i',
                     required=True,
                     help='Input computations file')
-parser.add_argument('--format', '-f',
-                    default="n3",
-                    help='Output format (default: n3)')
-parser.add_argument('--verbose', '-v', action='store_true',
-                    help='Turn on verbose output.')
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
@@ -31,10 +26,6 @@ args = parser.parse_args(sys.argv[1:])
 tree = ET.parse(args.input)
 
 i = parse(tree)
-if args.verbose:
-    sys.stderr.write("Read %s.\n" % args.input)
-
 rels = i.to_dict()
-
 print(json.dumps(rels, indent=4))
 
