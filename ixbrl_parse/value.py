@@ -53,5 +53,51 @@ class Duration(Val):
     def __init__(self, value):
         self.value = value
     def to_rdf(self):
-        return Literal(str(self.value), datatype=XSD.duration)
+        return Literal(str(self), datatype=XSD.duration)
+    def to_string(self):
+        D = self.value.days
+        s = self.value.seconds
 
+        if D > 356:
+            Y = int(D / 356)
+            D -= Y * 356
+        else:
+            Y = 0
+
+        if D > 30:
+            M = int(D / 30)
+            D -= M * 30
+        else:
+            M = 0
+
+        if s > 3600:
+            h = int(s / 3600)
+            s -= h * 3600
+        else:
+            h = 0
+
+        if s > 60:
+            m = int(s / 60)
+            s -= m * 60
+        else:
+            m = 0
+
+        ret = "P"
+        if Y > 0:
+            ret += "%dY" % Y
+        if M > 0:
+            ret += "%dM" % M
+        if D > 0:
+            ret += "%dD" % D
+
+        if h > 0 or m > 0 or s > 0:
+            ret += "T"
+
+            if h > 0:
+                ret += "%dH" % h
+            if m > 0:
+                ret += "%dM" % m
+            if s > 0:
+                ret += "%dS" % s
+
+        return ret

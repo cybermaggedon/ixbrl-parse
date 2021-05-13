@@ -162,8 +162,13 @@ def entityfilercategoryen(pre, value):
 def duryear(pre, value):
     value = value.strip()
     value = float(value)
-    # FIXME: Er... precision, year is imprecise
+
+    # Year is imprecise
     value = datetime.timedelta(days=value * 356)
+
+    # This rounds off the seconds
+    value = datetime.timedelta(days = value.days)
+    
     return Duration(value)
 
 def durwordsen(pre, value):
@@ -175,8 +180,13 @@ def durwordsen(pre, value):
 def durmonth(pre, value):
     value = value.strip()
     value = int(value)
-    # FIXME: Er... precision, month is imprecise
+
+    # Month is imprecise
     value = datetime.timedelta(days=value * 30)
+
+    # This rounds off the seconds
+    value = datetime.timedelta(days = value.days)
+
     return Duration(value)
 
 def durday(pre, value):
