@@ -152,6 +152,8 @@ def parse_durwordsen(val):
 
     val = number_parser.parse(val)
 
+    val = val.replace("\xa0", " ")
+
     res = re.split(r'[ ,.:;-]+', val)
 
     for v in res:
