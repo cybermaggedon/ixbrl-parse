@@ -40,6 +40,11 @@ Parse iXBRL and output in CSV:
 ixbrl-to-csv -i accts.html
 ```
 
+Parse iXBRL and output in JSON:
+```
+ixbrl-to-json -i accts.html
+```
+
 Dump iXBRL values:
 ```
 ixbrl-dump -i accts.html
