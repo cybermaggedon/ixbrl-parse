@@ -105,8 +105,8 @@ def cdump(ctxt, level=0):
             ))
         for name, value in c.values.items():
             if hasattr(value, "unit"):
-                print("%s- %s: %s (%s)" % (
-                    indent, qname_repr(name), value, value.unit
+                print("%s- %s: %s" % (
+                    indent, qname_repr(name), value
                 ))
             else:
                 if len(str(value)) > maxwidth:

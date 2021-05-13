@@ -12,6 +12,7 @@ import hashlib
 
 from . import transform
 from . import triples
+from . value import *
 
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
@@ -366,17 +367,6 @@ class Value:
             value += Value.recurse_elts(elt)
         return value
 
-    def to_value(self):
-
-        raw = self.get_raw()
-
-        if hasattr(self, "format") and self.format:
-            value = transform.transform(self, raw)
-        else:
-            value = raw
-
-        return value
-
     def to_string(self):
         """Represent as string"""
         return str(self.to_value())
@@ -389,7 +379,14 @@ class Value:
 
 class NonNumeric(Value):
     """Represents an iXBRL nonNumeric value"""
-    pass
+
+    def to_value(self):
+        raw = self.get_raw()
+        if hasattr(self, "format") and self.format:
+            value = transform.transform(self, raw)
+        else:
+            value = String(raw)
+        return value
 
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
@@ -413,6 +410,15 @@ class NonFraction(Value):
     #         value = str(value)
 
     #     return value
+
+    def to_value(self):
+        raw = self.get_raw()
+        if hasattr(self, "format") and self.format:
+            value = transform.transform(self, raw)
+        else:
+            if raw in { "None", "", "no", "No" }: raw = 0
+            value = Float(float(raw), self.unit)
+        return value
 
 class Fraction(Value):
 

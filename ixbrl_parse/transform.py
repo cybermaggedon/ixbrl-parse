@@ -9,6 +9,8 @@ import datetime
 import number_parser
 import re
 import sys
+from . value import *
+
 
 states = {
     "Alabama": "AL",
@@ -64,7 +66,6 @@ states = {
     "Wyoming": "WY"
 }
 
-
 def parse_durwordsen(val):
 
     delta = datetime.timedelta()
@@ -117,74 +118,72 @@ def transform(pre, value):
 def boolballotbox(pre, value):
     value = value.strip()
     if value == "☐":
-        value = False
+        return Boolean(False)
     elif value == "☑":
-        value = True
+        return Boolean(True)
     elif value == "☒":
-        value = False
+        return Boolean(False)
     else:
         raise RuntimeError(
             "Can't parse boolballotbox value %s" % value
         )
-    return value
     
 def datemonthdayyearen(pre, value):
     value = value.strip()
     try:
         value = datetime.datetime.strptime(value, "%B %d, %Y").date()
+        return Date(value)
     except:
         value = datetime.datetime.strptime(value, "%B %d , %Y").date()
-    return value
+        return Date(value)
 
 def datemonthdayen(pre, value):
     value = value.strip()
     value = datetime.datetime.strptime(value, "%B %d").date()
-    return value
+    return Date(value)
 
 def stateprovnameen(pre, value):
     value = value.strip()
     if value in states:
-        value = states[value]
+        return String(states[value])
     else:
         raise RuntimeError("Don't know state %s" % value)
-    return value
 
 def exchnameen(pre, value):
     # Leave it alone
     value = value.strip()
-    return value
+    return String(value)
 
 def entityfilercategoryen(pre, value):
     # Leave it alone
     value = value.strip()
-
-    return value
+    return String(value)
 
 def duryear(pre, value):
     value = value.strip()
     value = float(value)
     # FIXME: Er... precision, year is imprecise
     value = datetime.timedelta(days=value * 356)
-    return value
+    return Duration(value)
 
 def durwordsen(pre, value):
     value = value.strip()
     v = value
     value = parse_durwordsen(value)
-    return value
+    return Duration(value)
 
 def durmonth(pre, value):
     value = value.strip()
     value = int(value)
     # FIXME: Er... precision, month is imprecise
     value = datetime.timedelta(days=value * 30)
-    return value
+    return Duration(value)
 
 def durday(pre, value):
     value = value.strip()
     value = int(value)
     value = datetime.timedelta(days=value)
-    return value
+    return Duration(value)
 
 def datemonthday(pre, value):
     value = value.strip()
@@ -192,7 +191,7 @@ def datemonthday(pre, value):
     # FIXME: A string, like the ixbrl2 spec says.  Can't be represented
     # in a Python type
     value = "--" + str(int(elts[0])) + "-" + str(int(elts[1]))
-    return value
+    return MonthDay(value)
 
 def datedaymonthyear(pre, value):
     value = value.strip()
@@ -207,18 +206,16 @@ def datedaymonthyearen(pre, value):
     value = re.sub("([0-9]+)rd", "\\1", value)
     value = re.sub("([0-9]+)th", "\\1", value)
     value = datetime.datetime.strptime(value, "%d %B %Y").date()
-    return value
+    return Date(value)
 
 def booleanfalse(pre, value):
-    value = False
-    return value
+    return Boolean(False)
 
 def booleantrue(pre, value):
-    value = True
-    return value
+    return Boolean(True)
 
 def nocontent(pre, value):
-    return ""
+    return String("")
 
 def numdotdecimal(pre, value):
     value = value.replace(",", "")
@@ -226,8 +223,9 @@ def numdotdecimal(pre, value):
 
     # Must be non-negative
     value = abs(float(value))
-    value = str(value)
-    return value
+    f = Float(value)
+    if pre.unit: f.unit = pre.unit
+    return f
 
 def numcommadot(pre, value):
     value = value.replace(",", "")
@@ -235,16 +233,20 @@ def numcommadot(pre, value):
 
     # Must be non-negative
     value = abs(float(value))
-    value = str(value)
-    return value
+
+    f = Float(value)
+    if pre.unit: f.unit = pre.unit
+    return f
 
 def numdash(pre, value):
-    value = "0"
-    return value
+    f = Float(0)
+    if pre.unit: f.unit = pre.unit
+    return f
 
 def zerodash(pre, value):
-    value = "0"
-    return value
+    f = Float(0)
+    if pre.unit: f.unit = pre.unit
+    return f
 
 def datelonguk(pre, value):
     value = value.strip()
@@ -253,12 +255,11 @@ def datelonguk(pre, value):
     value = re.sub("([0-9]+)rd", "\\1", value)
     value = re.sub("([0-9]+)th", "\\1", value)
     value = datetime.datetime.strptime(value, "%d %B %Y").date()
-    return value
+    return Date(value)
 
 def numwordsen(pre, value):
     value = value.strip()
     value = number_parser.parse(value)
-
     return value
 
 SEC_XFORM = "http://www.sec.gov/inlineXBRL/transformation/2015-08-31"
