@@ -799,12 +799,6 @@ def parse(doc):
         else:
             v.format = None
 
-        # FIXME: Wrong
-        # FIXME: I don't think .value is used now, all parsed from
-        # .elements.
-        value = elt.text
-
-        v.value = value
         v.scale = scale
         v.elements = [elt]
         v.unit = units[elt.get("unitRef")]

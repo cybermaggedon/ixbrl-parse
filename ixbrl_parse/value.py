@@ -9,6 +9,10 @@ class Val:
         return self.to_string()
     def __repr__(self):
         return self.to_string()
+    def get_value(self):
+        return self.value
+    def get_unit(self):
+        return None
 
 class Boolean(Val):
     def __init__(self, value):
@@ -39,6 +43,8 @@ class Float(Val):
             return str(self.value)
     def to_rdf(self):
         return Literal(self.value, datatype=XSD.float)
+    def get_unit(self):
+        return str(self.unit)
 
 class MonthDay(Val):
     def __init__(self, m, d):
@@ -48,6 +54,8 @@ class MonthDay(Val):
         return "--%02d-%02d" % (self.m, self.d)
     def to_rdf(self):
         return Literal(str(self), datatype=XSD.string)
+    def to_value(self):
+        return self.to_string()
 
 class Duration(Val):
     def __init__(self, value):
@@ -101,3 +109,5 @@ class Duration(Val):
                 ret += "%dS" % s
 
         return ret
+    def to_value(self):
+        return self.to_string()

@@ -32,7 +32,7 @@ if args.verbose:
     sys.stderr.write("Read %s.\n" % args.input)
 
 fields = [
-    "namespace", "name", "value", "entity", "scheme", "start", "end",
+    "namespace", "name", "value", "unit", "entity", "scheme", "start", "end",
     "instant"
 ]
 fieldset = set(fields)
@@ -45,7 +45,8 @@ for c in i.contexts.values():
         row = {
             "namespace": v.name.namespace,
             "name": v.name.localname,
-            "value": v.to_string()[:maxwidth]
+            "value": str(v.to_value().get_value())[:maxwidth],
+            "unit": v.to_value().get_unit(),
         }
 
         if c.entity:
