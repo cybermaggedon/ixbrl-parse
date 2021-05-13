@@ -18,7 +18,7 @@ from rdflib import URIRef
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
 
-LOCAL = "http://cyberapocalyp.se/xbrl"
+LOCAL = "http://cyberapocalyp.se/xbrl/"
 ROOT = LOCAL + "root"
 
 # Relationships
