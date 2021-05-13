@@ -349,85 +349,78 @@ class Value:
         if self.value:
             print("  Value:", self.value)
 
-def recurse_elts(elt, lower=False):
-    a = ""
-    if elt.text:
-        a += elt.text + " "
-    for s in elt:
-        a += recurse_elts(s, True)
-    if lower and elt.tail:
-        a += elt.tail
-    return a
+    @staticmethod
+    def recurse_elts(elt, lower=False):
+        a = ""
+        if elt.text:
+            a += elt.text + " "
+        for s in elt:
+            a += Value.recurse_elts(s, True)
+        if lower and elt.tail:
+            a += elt.tail
+        return a
+
+    def get_raw(self):
+        value = ""
+        for elt in self.elements:
+            value += Value.recurse_elts(elt)
+        return value
+
+    def to_value(self):
+
+        raw = self.get_raw()
+
+        if hasattr(self, "format") and self.format:
+            value = transform.transform(self, raw)
+        else:
+            value = raw
+
+        return value
+
+    def to_string(self):
+        """Represent as string"""
+        return str(self.to_value())
+
+    def __str__(self):
+        return self.to_string()
+
+    def __repr__(self):
+        return str(self)
 
 class NonNumeric(Value):
     """Represents an iXBRL nonNumeric value"""
-
-    def to_value(self):
-        value = ""
-        for elt in self.elements:
-            value += recurse_elts(elt)
-
-        if hasattr(self, "format") and self.format:
-            value = transform.transform(self, value)
-
-        return value
-
-    def to_string(self):
-        """Represent as string"""
-        return str(self.to_value())
-
-    def __str__(self):
-        return self.to_string()
-
-    def __repr__(self):
-        return str(self)
+    pass
 
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
+    pass
 
-    def to_value(self):
+    #     value = ""
+    #     for elt in self.elements:
+    #         value += recurse_elts(elt)
 
-        value = ""
-        for elt in self.elements:
-            value += recurse_elts(elt)
+    #     if value == None or value == "":
+    #         value = "0"
 
-        if value == None or value == "":
-            value = "0"
+    #     if hasattr(self, "format") and self.format:
+    #         value = transform.transform(self, value)
 
-        if hasattr(self, "format") and self.format:
-            value = transform.transform(self, value)
+    #     if value in {"no", "No", "zero", "none", "None"}:
+    #         value = "0"
 
-        if value in {"no", "No", "zero", "none", "None"}:
-            value = "0"
+    #     if self.scale != 1:
+    #         value = float(value) * self.scale
+    #         value = str(value)
 
-        if self.scale != 1:
-            value = float(value) * self.scale
-            value = str(value)
-
-        return value
-
-    def to_string(self):
-        """Represent as string"""
-        return str(self.to_value())
-
-    def __str__(self):
-        return self.to_string()
-
-    def __repr__(self):
-        return str(self)
+    #     return value
 
 class Fraction(Value):
+
     """Represents an iXBRL fraction value: Not implemented"""
 
-    def to_string(self):
+    def get_raw(self):
         """Represent as string"""
         raise RuntimeError("Not implemented: Fraction")
-
-    def __str__(self):
-        return self.to_string()
-
-    def __repr__(self):
-        return str(self)
 
 class Relationship:
     """Represents a single fragment of the context definition.
