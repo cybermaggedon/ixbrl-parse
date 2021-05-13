@@ -25,8 +25,13 @@ IS_A = URIRef(RDF + "type")
 COMMENT = URIRef(RDFS + "label")
 RDFS_CLASS = URIRef(RDFS + "Class")
 RDFS_PROPERTY = URIRef(RDFS + "Property")
-CONTAINS = URIRef(LOCAL + "contains")
-REPORTS = URIRef(LOCAL + "reports")
+
+# Properties
+CONTAINS = URIRef(LOCAL + "p#contains")
+REPORTS = URIRef(LOCAL + "p#reports")
+STARTS = URIRef(LOCAL + "p#starts")
+ENDS = URIRef(LOCAL + "p#ends")
+OCCURS = URIRef(LOCAL + "p#occurs")
 
 # Types
 CONTEXT = URIRef(LOCAL + "t#context") # Superclass
@@ -225,6 +230,18 @@ class Context:
 
         if rel == None:
             tpl.extend([
+                (CONTAINS, COMMENT, Literal("contains")),
+                (REPORTS, COMMENT, Literal("reports")),
+                (STARTS, COMMENT, Literal("starts")),
+                (ENDS, COMMENT, Literal("ends")),
+                (OCCURS, COMMENT, Literal("occurs")),
+
+                (CONTAINS, IS_A, RDFS_PROPERTY),
+                (REPORTS, IS_A, RDFS_PROPERTY),
+                (STARTS, IS_A, RDFS_PROPERTY),
+                (ENDS, IS_A, RDFS_PROPERTY),
+                (OCCURS, IS_A, RDFS_PROPERTY),
+
                 (CONTEXT, COMMENT, Literal("Context")),
                 (ENTITY, COMMENT, Literal("Entity")),
                 (PERIOD, COMMENT, Literal("Period")),
@@ -274,11 +291,32 @@ class Context:
                     CONTAINS,
                     URIRef(c.get_uri())
                 ))
-            elif isinstance(rel, Period) or isinstance(rel, Instant):
+            elif isinstance(rel, Period):
                 tpl.append((
                     URIRef(self.get_uri()),
                     REPORTS,
                     URIRef(c.get_uri())
+                ))
+                tpl.append((
+                    URIRef(c.get_uri()),
+                    STARTS,
+                    rel.get_start().to_rdf()
+                ))
+                tpl.append((
+                    URIRef(c.get_uri()),
+                    ENDS,
+                    rel.get_end().to_rdf()
+                ))
+            elif isinstance(rel, Instant):
+                tpl.append((
+                    URIRef(self.get_uri()),
+                    REPORTS,
+                    URIRef(c.get_uri())
+                ))
+                tpl.append((
+                    URIRef(c.get_uri()),
+                    OCCURS,
+                    rel.get_date().to_rdf()
                 ))
             elif isinstance(rel, Dimension):
                 tpl.append((
@@ -453,7 +491,7 @@ class Period(Relationship):
     def __init__(self, start, end):
         self.start, self.end = start, end
     def __str__(self):
-        return("period(%s,%s)" % (self.start,self.end))
+        return("period(%s,%s)" % (self.start, self.end))
     def get_description(self):
         return "%s - %s" % (
             self.start, self.end
@@ -462,6 +500,10 @@ class Period(Relationship):
         return PERIOD
     def url_part(self):
         return "/%s-%s" % (self.start, self.end)
+    def get_start(self):
+        return Date(self.start)
+    def get_end(self):
+        return Date(self.end)
 
 class Instant(Relationship):
     """Describes the period instant definition of a context."""
@@ -475,6 +517,8 @@ class Instant(Relationship):
         return INSTANT
     def url_part(self):
         return "/%s" % (self.instant)
+    def get_date(self):
+        return Date(self.instant)
 
 class Dimension(Relationship):
     """Describes a single dimension definition of a context."""
