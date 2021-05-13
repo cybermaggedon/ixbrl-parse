@@ -42,19 +42,6 @@ def qname_repr(qname):
         "http://xbrl.sec.gov/dei/2019-01-31": "sec",
         "http://xbrl.sec.gov/country/2020-01-31": "country",
         
-        "http://www.lyft.com/20200930": "lyft",
-        "http://www.lyft.com/20201231": "lyft",
-        "http://www.uber.com/20210331": "uber",
-        "http://www.uber.com/20201231": "uber",
-        "http://www.google.com/20210331": "google",
-        "http://www.google.com/20201231": "google",
-        "http://www.apple.com/20210327": "apple",
-        "http://www.apple.com/20200926": "apple",
-        "http://www.microsoft.com/20210331": "microsoft",
-        "http://www.microsoft.com/20200630": "microsoft",
-        "http://www.amazon.com/20210331": "amazon",
-        "http://www.amazon.com/20201231": "amazon",
-        
         "http://xbrl.frc.org.uk/cd/2019-01-01/business": "uk-bus",
         "http://xbrl.frc.org.uk/fr/2019-01-01/core": "uk-core",
         "http://xbrl.frc.org.uk/reports/2019-01-01/direp": "uk-direp",
@@ -75,8 +62,6 @@ def qname_repr(qname):
 
         "http://xbrl.ifrs.org/taxonomy/2017-03-09/ifrs-full": "ifrs-full",
 
-        "http://www.erstegroup.com/xbrl/20161231": "erstegroup",
-        "http://www.nbg.gr/xbrl/20161231": "nbg",
     }
 
     if qname.namespace in nsmap:

@@ -154,16 +154,49 @@ class Context:
         elif isinstance(rel, Dimension):
             self.dimensions.append(rel)
     def to_dict(self):
+
         ret = {}
-        if self.entity:
-            ret["entity"] = self.entity
-        if self.period:
-            ret["period"] = self.period
-        if self.instant:
-            ret["instant"] = self.instant
-        if len(self.dimensions) > 0:
-            ret["dimensions"] = self.dimensions
+
+        for rel, ctxt in self.children.items():
+
+            id = rel.get_id()[:16]
+
+            if isinstance(rel, Entity):
+                if "entity" not in ret:
+                    ret["entity"] = {}
+                id = rel.id
+                obj = ctxt.to_dict()
+                obj["id"] = rel.id
+                obj["scheme"] = rel.scheme
+                ret["entity"][id] = obj                
+            if isinstance(rel, Period):
+                if "period" not in ret:
+                    ret["period"] = {}
+                id = str(rel.start) + ":" + str(rel.end)
+                obj = ctxt.to_dict()
+                obj["start"] = str(rel.start)
+                obj["end"] = str(rel.end)
+                ret["period"][id] = obj
+            if isinstance(rel, Instant):
+                if "instant" not in ret:
+                    ret["instant"] = {}
+                id = str(rel.instant)
+                obj = ctxt.to_dict()
+                obj["date"] = str(rel.instant)
+                ret["instant"][id] = obj
+            if isinstance(rel, Dimension):
+                dim = rel.dimension.localname
+                value = rel.value.localname
+                if dim not in ret:
+                    ret[dim] = {}
+                obj = ctxt.to_dict()
+                ret[dim][value] = obj
+
+        for name, value in self.values.items():
+            ret[name.localname] = value.to_dict()
+
         return ret
+
     def to_string(self):
         """Returns a string representation of the context"""
         val = self.to_dict()
@@ -433,6 +466,9 @@ class NonNumeric(Value):
             value = String(raw.strip())
         return value
 
+    def to_dict(self):
+        return str(self.to_value().get_value())
+
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
 
@@ -444,6 +480,8 @@ class NonFraction(Value):
             if raw in { "nil", "None", "none", "", "no", "No" }: raw = 0
             value = Float(float(raw), self.unit)
         return value
+    def to_dict(self):
+        return self.to_value().get_value()
 
 class Fraction(Value):
 
@@ -491,6 +529,11 @@ class Entity(Relationship):
         return ENTITY
     def url_part(self):
         return "/" + create_hash(self.scheme)[0:4] + "/" + self.id
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "scheme": self.scheme
+        }
 
 class Period(Relationship):
     """Describes the period definition of a context."""
@@ -567,10 +610,6 @@ class Ixbrl:
     def __init__(self):
         self.root = Context()
 
-    def dump(self):
-        for k, v in self.values.items():
-            v.dump()
-
     def get_context(self, rels):
 
         cx = self.root
@@ -628,6 +667,9 @@ class Ixbrl:
                     return v.to_string()
 
         return None
+
+    def to_dict(self):
+        return self.root.to_dict()
 
     def get_triples(self):
         """Return a list of RDF triples."""
