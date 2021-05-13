@@ -223,7 +223,7 @@ def numdotdecimal(pre, value):
 
     # Must be non-negative
     value = abs(float(value))
-    f = Float(value)
+    f = Float(value * pre.scale)
     if pre.unit: f.unit = pre.unit
     return f
 
@@ -234,7 +234,7 @@ def numcommadot(pre, value):
     # Must be non-negative
     value = abs(float(value))
 
-    f = Float(value)
+    f = Float(value * pre.scale)
     if pre.unit: f.unit = pre.unit
     return f
 
@@ -263,7 +263,7 @@ def numwordsen(pre, value):
         value = 0
     else:
         value = number_parser.parse(value)
-    f = Float(value)
+    f = Float(float(value) * pre.scale)
     if pre.unit: f.unit = pre.unit
     return f
 
