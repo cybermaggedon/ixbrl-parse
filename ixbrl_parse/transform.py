@@ -191,13 +191,13 @@ def datemonthday(pre, value):
     # FIXME: A string, like the ixbrl2 spec says.  Can't be represented
     # in a Python type
     value = "--" + str(int(elts[0])) + "-" + str(int(elts[1]))
-    return MonthDay(value)
+    return MonthDay(int(elts[0]), int(elts[1]))
 
 def datedaymonthyear(pre, value):
     value = value.strip()
     elts = re.split(r'[^0-9]+', value)
     value = datetime.date(int(elts[2]), int(elts[1]), int(elts[0]))
-    return value
+    return Date(value)
 
 def datedaymonthyearen(pre, value):
     value = value.strip()
@@ -229,7 +229,7 @@ def numdotdecimal(pre, value):
 
 def numcommadot(pre, value):
     value = value.replace(",", "")
-    if value == "-": value = "0"
+    if value == "-": value = 0
 
     # Must be non-negative
     value = abs(float(value))
@@ -259,8 +259,14 @@ def datelonguk(pre, value):
 
 def numwordsen(pre, value):
     value = value.strip()
-    value = number_parser.parse(value)
-    return value
+    if value in { "nil", "None", "none", "", "no", "No" }:
+        value = 0
+    else:
+        value = number_parser.parse(value)
+    f = Float(value)
+    if pre.unit: f.unit = pre.unit
+    return f
+
 
 SEC_XFORM = "http://www.sec.gov/inlineXBRL/transformation/2015-08-31"
 XBRL_XFORM = "http://www.xbrl.org/inlineXBRL/transformation/2015-02-26"

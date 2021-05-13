@@ -11,8 +11,9 @@ import sys
 import hashlib
 
 from . import transform
-from . import triples
 from . value import *
+
+from rdflib import URIRef
 
 RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 RDFS = "http://www.w3.org/2000/01/rdf-schema#"
@@ -20,21 +21,21 @@ RDFS = "http://www.w3.org/2000/01/rdf-schema#"
 LOCAL = "http://local/"
 
 # Relationships
-IS_A = triples.Uri(RDF + "type")
-COMMENT = triples.Uri(RDFS + "label")
-RDFS_CLASS = triples.Uri(RDFS + "Class")
-RDFS_PROPERTY = triples.Uri(RDFS + "Property")
-CONTAINS = triples.Uri(LOCAL + "contains")
-REPORTS = triples.Uri(LOCAL + "reports")
+IS_A = URIRef(RDF + "type")
+COMMENT = URIRef(RDFS + "label")
+RDFS_CLASS = URIRef(RDFS + "Class")
+RDFS_PROPERTY = URIRef(RDFS + "Property")
+CONTAINS = URIRef(LOCAL + "contains")
+REPORTS = URIRef(LOCAL + "reports")
 
 # Types
-CONTEXT = triples.Uri(LOCAL + "t#context") # Superclass
-ROOT = triples.Uri(LOCAL + "t#root")
-DIMENSION = triples.Uri(LOCAL + "t#dimension") # Terminology may be wrong here.
-AXIS = triples.Uri(LOCAL + "t#axis") # Terminology may be wrong here.
-ENTITY = triples.Uri(LOCAL + "t#entity")
-PERIOD = triples.Uri(LOCAL + "t#period")
-INSTANT = triples.Uri(LOCAL + "t#instant")
+CONTEXT = URIRef(LOCAL + "t#context") # Superclass
+ROOT = URIRef(LOCAL + "t#root")
+DIMENSION = URIRef(LOCAL + "t#dimension") # Terminology may be wrong here.
+AXIS = URIRef(LOCAL + "t#axis") # Terminology may be wrong here.
+ENTITY = URIRef(LOCAL + "t#entity")
+PERIOD = URIRef(LOCAL + "t#period")
+INSTANT = URIRef(LOCAL + "t#instant")
 
 # Create a hex hash, short-hand
 def create_hash(thing):
@@ -93,8 +94,8 @@ class Context:
     get_triples()
         Converts a context into RDF triples. Returns a list of 3-tuples,
         each describing an RDF arc associated with the context.
-        The first two elements of the 3-tuple are triples.Uri type,
-        the second can be triples.Uri or triples.String.
+        The first two elements of the 3-tuple are URIRef type,
+        the second can be URIRef or Literal.
 
     This module organises contexts as a hierarchy, each context 
     connected to its parent through a Relationship which is a single 
@@ -216,19 +217,19 @@ class Context:
         """
         Converts a context into RDF triples. Returns a list of 3-tuples,
         each describing an RDF arc associated with the context.
-        The first two elements of the 3-tuple are triples.Uri type,
-        the second can be triples.Uri or triples.String.
+        The first two elements of the 3-tuple are URIRef type,
+        the second can be URIRef or Literal.
         """
 
         tpl = []
 
         if rel == None:
             tpl.extend([
-                (CONTEXT, COMMENT, triples.String("Context")),
-                (ENTITY, COMMENT, triples.String("Entity")),
-                (PERIOD, COMMENT, triples.String("Period")),
-                (INSTANT, COMMENT, triples.String("Instant")),
-                (DIMENSION, COMMENT, triples.String("Dimension")),
+                (CONTEXT, COMMENT, Literal("Context")),
+                (ENTITY, COMMENT, Literal("Entity")),
+                (PERIOD, COMMENT, Literal("Period")),
+                (INSTANT, COMMENT, Literal("Instant")),
+                (DIMENSION, COMMENT, Literal("Dimension")),
 
                 # FIXME: These are types?
                 (CONTEXT, IS_A, RDFS_CLASS),
@@ -240,50 +241,50 @@ class Context:
 
         if rel == None:
             tpl.append((
-                triples.Uri(self.get_uri()), IS_A, ROOT
+                URIRef(self.get_uri()), IS_A, ROOT
             ))
         else:
             tpl.append((
-                triples.Uri(self.get_uri()), IS_A, rel.get_type()
+                URIRef(self.get_uri()), IS_A, rel.get_type()
             ))
 
         if rel == None:
             tpl.append((
-                triples.Uri(self.get_uri()),
+                URIRef(self.get_uri()),
                 COMMENT,
-                triples.String("everything")
+                Literal("everything")
             ))
         elif isinstance(rel, Entity) and entity_name != None:
             tpl.append((
-                triples.Uri(self.get_uri()),
+                URIRef(self.get_uri()),
                 COMMENT,
-                triples.String(entity_name)
+                Literal(entity_name)
             ))
         else:
             tpl.append((
-                triples.Uri(self.get_uri()),
+                URIRef(self.get_uri()),
                 COMMENT,
-                triples.String(rel.get_description())
+                Literal(rel.get_description())
             ))
 
         for rel, c in self.children.items():
             if isinstance(rel, Entity):
                 tpl.append((
-                    triples.Uri(self.get_uri()),
+                    URIRef(self.get_uri()),
                     CONTAINS,
-                    triples.Uri(c.get_uri())
+                    URIRef(c.get_uri())
                 ))
             elif isinstance(rel, Period) or isinstance(rel, Instant):
                 tpl.append((
-                    triples.Uri(self.get_uri()),
+                    URIRef(self.get_uri()),
                     REPORTS,
-                    triples.Uri(c.get_uri())
+                    URIRef(c.get_uri())
                 ))
             elif isinstance(rel, Dimension):
                 tpl.append((
-                    triples.Uri(self.get_uri()),
+                    URIRef(self.get_uri()),
                     rel.get_name_uri(),
-                    triples.Uri(c.get_uri())
+                    URIRef(c.get_uri())
                 ))
                 tpl.append((
                     rel.get_name_uri(), IS_A, AXIS
@@ -291,7 +292,7 @@ class Context:
                 tpl.append((
                     rel.get_name_uri(),
                     COMMENT,
-                    triples.String(rel.dimension.localname)
+                    Literal(rel.dimension.localname)
                 ))
 
             tpl.extend(c.get_triples(rel, entity_name))
@@ -309,29 +310,29 @@ class Context:
             if isinstance(value, ET.QName):
 
                 tpl.append((
-                    triples.Uri(self.get_uri()),
-                    triples.Uri("%s#%s" % (name.namespace, name.localname)),
-                    triples.Uri("%s#%s" % (value.namespace, value.localname))
+                    URIRef(self.get_uri()),
+                    URIRef("%s#%s" % (name.namespace, name.localname)),
+                    URIRef("%s#%s" % (value.namespace, value.localname))
                 ))
 
             else:
 
                 tpl.append((
-                    triples.Uri(self.get_uri()),
-                    triples.Uri("%s#%s" % (name.namespace, name.localname)),
-                    triples.String(str(value))
+                    URIRef(self.get_uri()),
+                    URIRef("%s#%s" % (name.namespace, name.localname)),
+                    value.to_value().to_rdf()
                 ))
 
             tpl.append((
-                triples.Uri("%s#%s" % (name.namespace, name.localname)),
+                URIRef("%s#%s" % (name.namespace, name.localname)),
                 IS_A,
                 RDFS_PROPERTY
             ))
 
             tpl.append((
-                triples.Uri("%s#%s" % (name.namespace, name.localname)),
+                URIRef("%s#%s" % (name.namespace, name.localname)),
                 COMMENT,
-                triples.String(name.localname)
+                Literal(name.localname)
             ))
 
         return tpl
@@ -385,38 +386,18 @@ class NonNumeric(Value):
         if hasattr(self, "format") and self.format:
             value = transform.transform(self, raw)
         else:
-            value = String(raw)
+            value = String(raw.strip())
         return value
 
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
-    pass
-
-    #     value = ""
-    #     for elt in self.elements:
-    #         value += recurse_elts(elt)
-
-    #     if value == None or value == "":
-    #         value = "0"
-
-    #     if hasattr(self, "format") and self.format:
-    #         value = transform.transform(self, value)
-
-    #     if value in {"no", "No", "zero", "none", "None"}:
-    #         value = "0"
-
-    #     if self.scale != 1:
-    #         value = float(value) * self.scale
-    #         value = str(value)
-
-    #     return value
 
     def to_value(self):
         raw = self.get_raw()
         if hasattr(self, "format") and self.format:
             value = transform.transform(self, raw)
         else:
-            if raw in { "None", "", "no", "No" }: raw = 0
+            if raw in { "nil", "None", "none", "", "no", "No" }: raw = 0
             value = Float(float(raw), self.unit)
         return value
 
@@ -511,11 +492,11 @@ class Dimension(Relationship):
     def url_part(self):
         return "/%s=%s" % (self.dimension.localname, self.value.localname)
     def get_name_uri(self):
-        return triples.Uri("%s#%s" % (
+        return URIRef("%s#%s" % (
             self.dimension.namespace, self.dimension.localname
         ))
     def get_value_uri(self):
-        return triples.Uri("%s#%s" % (
+        return URIRef("%s#%s" % (
             self.value.namespace, self.value.localname
         ))
 

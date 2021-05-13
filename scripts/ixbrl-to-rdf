@@ -15,7 +15,6 @@ from rdflib import Graph, Literal, RDF, URIRef
 from rdflib.namespace import XSD
 
 from ixbrl_parse.ixbrl import parse
-import ixbrl_parse.triples as triples
 
 maxwidth=40
 
@@ -45,15 +44,9 @@ rels = i.get_triples()
 g = Graph()
 
 for rel in rels:
-    if isinstance(rel[2], triples.Uri):
-        g.add((
-            URIRef(rel[0].uri), URIRef(rel[1].uri), URIRef(rel[2].uri)
-        ))
-    else:
-        g.add((
-            URIRef(rel[0].uri), URIRef(rel[1].uri),
-            Literal(rel[2].value, datatype=XSD.string)
-        ))
+    g.add((
+        rel[0], rel[1], rel[2]
+    ))
 
 print(g.serialize(format=args.format).decode("utf-8"))
 

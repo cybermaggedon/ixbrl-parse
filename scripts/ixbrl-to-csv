@@ -10,7 +10,6 @@ import argparse
 import csv
 
 from ixbrl_parse.ixbrl import parse
-import ixbrl_parse.triples as triples
 
 maxwidth=200
 
