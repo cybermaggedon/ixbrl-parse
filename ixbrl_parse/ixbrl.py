@@ -855,6 +855,10 @@ def parse(doc):
 
     continuation = {}
 
+    for elt in doc.findall(".//ix:continuation", ns):
+        cid = elt.get("id")
+        continuation[cid] = elt
+
     for elt in doc.findall(".//ix:nonNumeric", ns):
         name = to_qname(elt, elt.get("name"))
         cont = elt.get("continuedAt")
@@ -872,8 +876,11 @@ def parse(doc):
         ctxt.values[name] = v
         values[key] = v
 
-        if cont:
-            continuation[cont] = v
+        while cont != None:
+            contelt = continuation[cont]
+            for s in contelt:
+                v.elements.append(s)
+            cont = contelt.get("continuedAt")
 
     for elt in doc.findall(".//ix:nonFraction", ns):
         name = to_qname(elt, elt.get("name"))
@@ -903,16 +910,11 @@ def parse(doc):
         ctxt.values[name] = v
         values[key] = v
 
-        if cont:
-            continuation[cont] = v
-
-    for elt in doc.findall(".//ix:continuation", ns):
-        cid = elt.get("id")
-        cont = elt.get("continuedAt")
-        for s in elt:
-            continuation[cid].elements.append(s)
-        continuation[cont] = continuation[cid]
-
+        while cont != None:
+            contelt = continuation[cont]
+            for s in contelt:
+                v.elements.append(s)
+            cont = contelt.get("continuedAt")
 
     i.units = units
     i.values = values
