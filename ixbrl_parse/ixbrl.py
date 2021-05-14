@@ -569,7 +569,7 @@ class Entity(Relationship):
     def get_type(self):
         return ENTITY
     def url_part(self):
-        return "/" + create_hash(self.scheme)[0:4] + "/" + self.id
+        return create_hash(self.scheme)[0:4] + "/" + self.id + "/"
     def to_dict(self):
         return {
             "id": self.id,
@@ -589,7 +589,7 @@ class Period(Relationship):
     def get_type(self):
         return PERIOD
     def url_part(self):
-        return "/%s-%s" % (self.start, self.end)
+        return "%s-%s/" % (self.start, self.end)
     def get_start(self):
         return Date(self.start)
     def get_end(self):
@@ -606,7 +606,7 @@ class Instant(Relationship):
     def get_type(self):
         return INSTANT
     def url_part(self):
-        return "/%s" % (self.instant)
+        return "%s/" % (self.instant)
     def get_date(self):
         return Date(self.instant)
 
@@ -624,7 +624,7 @@ class Dimension(Relationship):
     def get_type(self):
         return URIRef(self.get_name_uri())
     def url_part(self):
-        return "/%s=%s" % (self.dimension.localname, self.value.localname)
+        return "%s=%s/" % (self.dimension.localname, self.value.localname)
     def get_name_uri(self):
         return URIRef("%s#%s" % (
             self.dimension.namespace, self.dimension.localname
