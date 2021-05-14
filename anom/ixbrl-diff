@@ -37,8 +37,8 @@ def compare(a, b, path=[]):
     for name, value in a.values.items():
 
         if name.localname in b_map:
-            vala = str(value.to_value().get_value())[:60]
-            valb = str(b_map[name.localname].to_value().get_value())[:40]
+            vala = str(value.to_value().get_value())[:50]
+            valb = str(b_map[name.localname].to_value().get_value())[:50]
             if vala != valb:
                 print("At:")
                 for p in path:
