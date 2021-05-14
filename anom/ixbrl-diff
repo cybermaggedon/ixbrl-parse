@@ -7,7 +7,7 @@ import datetime
 from lxml import etree as ET
 import sys
 import argparse
-import json
+import csv
 
 from ixbrl_parse.ixbrl import parse, Entity, Period, Instant, Dimension
 
@@ -18,6 +18,9 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument('inputs', metavar='inputs', nargs=2,
                     help='Input files to compare')
+parser.add_argument('--format', '-f',
+                    default="text",
+                    help="Output format, one of 'text', 'csv' (default: text)")
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
@@ -30,7 +33,9 @@ i2 = parse(tree2)
 
 indexes = {}
 
-def compare(a, b, path=[]):
+def compare(a, b, path=[], csv=False):
+
+    ret = []
 
     b_map = {k.localname: v for k, v in b.values.items()}
 
@@ -40,24 +45,71 @@ def compare(a, b, path=[]):
             vala = str(value.to_value().get_value())[:50]
             valb = str(b_map[name.localname].to_value().get_value())[:50]
             if vala != valb:
-                print("At:")
-                for p in path:
-                    if isinstance(p, Entity):
-                        print("  Entity %s (%s)" % (p.id, p.scheme))
-                    elif isinstance(p, Period):
-                        print("  Period %s - %s" % (p.start, p.end))
-                    elif isinstance(p, Instant):
-                        print("  Instant %s" % p.instant)
-                    elif isinstance(p, Dimension):
-                        print("  Dimension %s: %s" % (p.dimension, p.value))
-                print("Fact %s:" % name.localname)
-                print("  A: %s" % vala)
-                print("  B: %s" % valb)
-                print()
+
+                ret.append({
+                    "path": path,
+                    "name": name.localname,
+                    "a": vala,
+                    "b": valb,
+                })
 
     for rel, ctxt in a.children.items():
         if rel in b.children:
-            compare(a.children[rel], b.children[rel], path + [rel])
+            ret.extend(compare(a.children[rel], b.children[rel], path + [rel]))
 
-compare(i1.root, i2.root, [])
+    return ret
+
+diffs = compare(i1.root, i2.root, [], args.format == "csv")
+
+if args.format == "csv":
+
+    fields = ["entity", "scheme", "start", "end", "instant", "name", "a", "b"]
+    fieldset = set(fields)
+
+    for diff in diffs:
+        for p in diff["path"]:
+            if isinstance(p, Dimension):
+                if p.dimension.localname not in fieldset:
+                    fields.append(p.dimension.localname)
+                    fieldset.add(p.dimension.localname)
+
+    writer = csv.DictWriter(sys.stdout, fields)
+    writer.writeheader()
+
+    for diff in diffs:
+        row = {
+            "name": diff["name"],
+            "a": diff["a"],
+            "b": diff["b"]
+        }
+        for p in diff["path"]:
+            if isinstance(p, Entity):
+                row["entity"] = p.id
+            if isinstance(p, Period):
+                row["start"] = str(p.start)
+                row["end"] = str(p.end)
+            if isinstance(p, Instant):
+                row["instant"] = str(p.instant)
+            if isinstance(p, Dimension):
+                row[p.dimension.localname] = p.value.localname
+        writer.writerow(row)
+
+else:
+
+    for diff in diffs:
+        print("At:")
+
+        for p in diff["path"]:
+            if isinstance(p, Entity):
+                print("  Entity %s (%s)" % (p.id, p.scheme))
+            elif isinstance(p, Period):
+                print("  Period %s - %s" % (p.start, p.end))
+            elif isinstance(p, Instant):
+                print("  Instant %s" % p.instant)
+            elif isinstance(p, Dimension):
+                print("  Dimension %s: %s" % (p.dimension, p.value))
+        print("Fact %s:" % diff["name"])
+        print("  A: %s" % diff["a"])
+        print("  B: %s" % diff["b"])
+        print()
 
