@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-"""Reads an iXBRL file on input, and outputs a JSON representation.
-Two representations are supported: flat: outputs a list of contexts and
-values; hierarchy: embeds contexts in related context which introduces a
-natural grouping structure to related contexts.
+"""Reads an iXBRL file on input, and outputs a key-value representation,
+keys and values are separated by pipe character.
 """
 
 import datetime
@@ -33,12 +31,15 @@ tree = ET.parse(args.input)
 
 i = parse(tree)
 
-if args.format == "flat":
-    rels = i.flatten()
-elif args.format == "hierarchy":
-    rels = i.to_dict()
-else:
-    raise RuntimeError("Format %s not known" % args.format)
+def dump(d, prefix=[]):
+    for k, v in d.items():
+        key = prefix + [k]
+        if isinstance(v, dict):
+            dump(v, key)
+        else:
+            print("%s|%s" % (".".join(key), str(v)[:40]))
 
-print(json.dumps(rels, indent=4))
+rels = i.to_dict()
+
+dump(rels)
 
