@@ -19,6 +19,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--input', '-i',
                     required=True,
                     help='Input computations file')
+parser.add_argument('--format', '-f',
+                    default="hierarchy",
+                    help="Output format, one of 'flat', 'hierarchy' (default: flat)")
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
@@ -26,6 +29,13 @@ args = parser.parse_args(sys.argv[1:])
 tree = ET.parse(args.input)
 
 i = parse(tree)
-rels = i.to_dict()
+
+if args.format == "flat":
+    rels = i.flatten()
+elif args.format == "hierarchy":
+    rels = i.to_dict()
+else:
+    raise RuntimeError("Format %s not known" % args.format)
+
 print(json.dumps(rels, indent=4))
 

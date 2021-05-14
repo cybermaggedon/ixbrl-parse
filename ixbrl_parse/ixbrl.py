@@ -153,6 +153,33 @@ class Context:
             self.instant = rel
         elif isinstance(rel, Dimension):
             self.dimensions.append(rel)
+
+    def flatten(self):
+
+        if not hasattr(self, "id") or self.id == None:
+            raise RuntimeError("This context has no ID")
+
+        cflat = {
+            "id": self.id
+        }
+        if self.entity:
+            cflat["entity"] = {
+                "id": self.entity.id,
+                "scheme": self.entity.scheme
+            }
+        if self.period:
+            cflat["start"] = str(self.period.start)
+            cflat["end"] = str(self.period.end)
+        if self.instant:
+            cflat["instant"] = str(self.instant.instant)
+        if len(self.dimensions) > 0:
+            cflat["dimensions"] = {
+                dim.dimension.localname: dim.value.localname
+                for dim in self.dimensions
+            }
+
+        return cflat
+
     def to_dict(self):
 
         ret = {}
@@ -469,6 +496,13 @@ class NonNumeric(Value):
     def to_dict(self):
         return str(self.to_value().get_value())
 
+    def flatten(self):
+        return {
+            "name": self.name.localname,
+            "context": self.context.id,
+            "value": str(self.to_value().get_value())
+        }
+
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
 
@@ -482,6 +516,13 @@ class NonFraction(Value):
         return value
     def to_dict(self):
         return self.to_value().get_value()
+
+    def flatten(self):
+        return {
+            "name": self.name.localname,
+            "context": self.context.id,
+            "value": self.to_value().get_value()
+        }
 
 class Fraction(Value):
 
@@ -670,6 +711,21 @@ class Ixbrl:
 
     def to_dict(self):
         return self.root.to_dict()
+
+    def flatten(self):
+        ret = {
+            "contexts": [],
+            "values": []
+        }
+
+        for c in self.contexts.values():
+
+            ret["contexts"].append(c.flatten())
+
+        for value in self.values.values():
+            ret["values"].append(value.flatten())
+
+        return ret
 
     def get_triples(self):
         """Return a list of RDF triples."""
