@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Not documented.
+"""Not documented. :)
 """
 
 import datetime
@@ -9,7 +9,7 @@ import sys
 import argparse
 import json
 
-from ixbrl_parse.ixbrl import parse
+from ixbrl_parse.ixbrl import parse, Entity, Period, Instant, Dimension
 
 maxwidth=40
 
@@ -28,27 +28,36 @@ tree2 = ET.parse(args.inputs[1])
 i1 = parse(tree1)
 i2 = parse(tree2)
 
-rels1 = i1.to_dict()
-rels2 = i2.to_dict()
-
 indexes = {}
 
-def compare(a, b, index=""):
+def compare(a, b, path=[]):
 
-    for key, value in a.items():
+    b_map = {k.localname: v for k, v in b.values.items()}
 
-        if isinstance(value, dict):
-            if key in b:
-                compare(value, b[key], index + "." + key)
-        else:
-            if key in b:
-                vala = str(a[key])[:40]
-                valb = str(b[key])[:40]
-                if vala != valb:
-                    print("Anomaly at", index + "." + key)
-                    print("  A:", vala)
-                    print("  B:", valb)
-                    print()
+    for name, value in a.values.items():
 
-compare(rels1, rels2)
+        if name.localname in b_map:
+            vala = str(value.to_value().get_value())[:60]
+            valb = str(b_map[name.localname].to_value().get_value())[:40]
+            if vala != valb:
+                print("At:")
+                for p in path:
+                    if isinstance(p, Entity):
+                        print("  Entity %s (%s)" % (p.id, p.scheme))
+                    elif isinstance(p, Period):
+                        print("  Period %s - %s" % (p.start, p.end))
+                    elif isinstance(p, Instant):
+                        print("  Instant %s" % p.instant)
+                    elif isinstance(p, Dimension):
+                        print("  Dimension %s: %s" % (p.dimension, p.value))
+                print("Fact %s:" % name.localname)
+                print("  A: %s" % vala)
+                print("  B: %s" % valb)
+                print()
+
+    for rel, ctxt in a.children.items():
+        if rel in b.children:
+            compare(a.children[rel], b.children[rel], path + [rel])
+
+compare(i1.root, i2.root, [])
 
