@@ -23,6 +23,9 @@ parser.add_argument('--input', '-i',
 parser.add_argument('--format', '-f',
                     default="hierarchy",
                     help="Output format, one of 'flat', 'hierarchy' (default: flat)")
+parser.add_argument('--separator', '-s',
+                    default="|",
+                    help="Output field separator, (default: |)")
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
@@ -37,7 +40,7 @@ def dump(d, prefix=[]):
         if isinstance(v, dict):
             dump(v, key)
         else:
-            print("%s|%s" % (".".join(key), str(v)[:40]))
+            print("%s%s%s" % (".".join(key), args.separator, str(v)[:40]))
 
 rels = i.to_dict()
 

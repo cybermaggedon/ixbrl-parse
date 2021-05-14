@@ -512,7 +512,7 @@ class NonFraction(Value):
             value = transform.transform(self, raw)
         else:
             if raw in { "nil", "None", "none", "", "no", "No" }: raw = 0
-            value = Float(float(raw), self.unit)
+            value = Float(float(raw) * self.scale, self.unit)
         return value
     def to_dict(self):
         return self.to_value().get_value()
