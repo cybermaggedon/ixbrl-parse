@@ -63,7 +63,7 @@ class Measure(Unit):
     def __init__(self, measure):
         self.measure = measure
     def __str__(self):
-        return str(self.measure)
+        return str(self.measure.localname)
 
 class Divide(Unit):
     """A unit formed by dividing two measurements"""
@@ -807,7 +807,10 @@ def parse(doc):
                 "./xbrli:unitDenominator/xbrli:measure", ns
             )
 
-            unit = Divide(Measure(num_elt.text), Measure(den_elt.text))
+            unit = Divide(
+                Measure(to_qname(num_elt, num_elt.text)),
+                Measure(to_qname(den_elt, den_elt.text))
+            )
             unit.id = id
 
             units[id] = unit
@@ -818,7 +821,7 @@ def parse(doc):
             pass
 
         meas_elt = unit_elt.find("xbrli:measure", ns)
-        units[id] = Measure(meas_elt.text)
+        units[id] = Measure(to_qname(meas_elt, meas_elt.text))
         units[id].id = id
 
     contexts = {}
