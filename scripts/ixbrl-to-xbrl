@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-"""Reads an iXBRL file on input, and outputs a JSON representation.
-Two representations are supported: flat: outputs a list of contexts and
-values; hierarchy: embeds contexts in related context which introduces a
-natural grouping structure to related contexts.
+"""Reads an iXBRL file on input, and outputs an XBRL instance.
 """
 
 import datetime

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-"""Not documented. :)
+"""Outputs differences between two iXBRL documents.  Specifically, the
+only differences reported are where two facts have different values.
+Facts which only occur in one of the inputs are not reported - only where
+a fact occurs in both inputs but with different values.  The differencing
+is context-aware, so that two facts are considered the same only if they
+have the same contexts.
 """
 
 import datetime
