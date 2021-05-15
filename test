@@ -3,7 +3,7 @@
 find ixbrl -type f | while read file
 do
   echo $file...
-  scripts/ixbrl-to-rdf -i $file > /dev/null
+  scripts/ixbrl-to-rdf $file > /dev/null
   if [[ $? -ne 0 ]]
   then
     break
