@@ -4,9 +4,13 @@
 ## Introduction
 
 - Python library code, parses iXBRL files.
-- Script `ixbrl-to-csv` outputs iXBRL tagged data in a CSV format.
+- Script `ixbrl-dump` emits iXBRL tagged data in a human-readable dump.
 - Script `ixbrl-to-rdf` emits iXBRL tagged data in RDF.
+- Script `ixbrl-to-csv` outputs iXBRL tagged data in a CSV format.
 - Script `ixbrl-to-json` emits iXBRL tagged data in JSON.
+- Script `ixbrl-to-xbrl` emits iXBRL tagged data as an XBRL instance.
+- Script `ixbrl-to-kv` emits iXBRL in a key-value form easily consumed
+  by scripts.
 
 ## Development
 
@@ -28,27 +32,32 @@ pip3 install git+https://github.com/cybermaggedon/ixbrl-parse
 
 Parse iXBRL and output in RDF (default n3 format):
 ```
-ixbrl-to-rdf -i accts.html
+ixbrl-to-rdf accts.html
 ```
 
 Parse iXBRL and output in RDF/XML:
 ```
-ixbrl-to-rdf -i accts.html --format xml
+ixbrl-to-rdf accts.html --format xml
 ```
 
 Parse iXBRL and output in CSV:
 ```
-ixbrl-to-csv -i accts.html
+ixbrl-to-csv accts.html
 ```
 
 Parse iXBRL and output in JSON:
 ```
-ixbrl-to-json -i accts.html
+ixbrl-to-json accts.html
 ```
 
 Dump iXBRL values:
 ```
-ixbrl-dump -i accts.html
+ixbrl-dump accts.html
+```
+
+Dump iXBRL as XBRL:
+```
+ixbrl-to-xbrl accts.html
 ```
 
 ## API
