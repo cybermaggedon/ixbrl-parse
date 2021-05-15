@@ -17,12 +17,8 @@ maxwidth=40
 parser = argparse.ArgumentParser(
     description=__doc__
 )
-parser.add_argument('--input', '-i',
-                    required=True,
-                    help='Input computations file')
-parser.add_argument('--format', '-f',
-                    default="hierarchy",
-                    help="Output format, one of 'flat', 'hierarchy' (default: flat)")
+parser.add_argument('input', metavar='input', nargs=1,
+                    help='Input iXBRL file')
 parser.add_argument('--separator', '-s',
                     default="|",
                     help="Output field separator, (default: |)")
@@ -30,7 +26,7 @@ parser.add_argument('--separator', '-s',
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
 
-tree = ET.parse(args.input)
+tree = ET.parse(args.input[0])
 
 i = parse(tree)
 

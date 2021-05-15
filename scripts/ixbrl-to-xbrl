@@ -21,14 +21,13 @@ LINK_NS = "http://www.xbrl.org/2003/linkbase"
 parser = argparse.ArgumentParser(
     description=__doc__
 )
-parser.add_argument('--input', '-i',
-                    required=True,
-                    help='Input computations file')
+parser.add_argument('input', metavar='input', nargs=1,
+                    help='Input iXBRL file')
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
 
-tree = ET.parse(args.input)
+tree = ET.parse(args.input[0])
 
 i = parse(tree)
 
