@@ -24,6 +24,8 @@ setuptools.setup(
     scripts=[
         "scripts/ixbrl-dump",
         "scripts/ixbrl-to-rdf",
-        "scripts/ixbrl-to-csv"
+        "scripts/ixbrl-to-csv",
+        "scripts/ixbrl-to-json",
+        "scripts/ixbrl-diff"
     ]
 )
