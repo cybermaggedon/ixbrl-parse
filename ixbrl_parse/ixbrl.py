@@ -748,13 +748,19 @@ def parse(doc):
     ns = {
         "ix": "http://www.xbrl.org/2013/inlineXBRL",
         "xbrli": "http://www.xbrl.org/2003/instance",
-        "xbrldi": "http://xbrl.org/2006/xbrldi"
+        "xbrldi": "http://xbrl.org/2006/xbrldi",
+        "xlink": "http://www.w3.org/1999/xlink",
+        "link": "http://www.xbrl.org/2003/linkbase"
     }
 
     units = {}
 
     # FIXME: Delete entity_name from here.
     entity_name = None
+
+    i.schemas = []
+    for elt in doc.findall(".//link:schemaRef", ns):
+        i.schemas.append(elt.get(ET.QName(ns["xlink"], "href")))
 
     for elt in doc.findall(".//ix:nonNumeric", ns):
 
@@ -801,7 +807,10 @@ def parse(doc):
                 "./xbrli:unitDenominator/xbrli:measure", ns
             )
 
-            units[id] = Divide(Measure(num_elt.text), Measure(den_elt.text))
+            unit = Divide(Measure(num_elt.text), Measure(den_elt.text))
+            unit.id = id
+
+            units[id] = unit
 
             continue
 
@@ -810,6 +819,7 @@ def parse(doc):
 
         meas_elt = unit_elt.find("xbrli:measure", ns)
         units[id] = Measure(meas_elt.text)
+        units[id].id = id
 
     contexts = {}
 
@@ -849,6 +859,8 @@ def parse(doc):
                 rels.append(Dimension(dimension, value))
 
         ctxt = i.get_context(rels)
+
+        # This might relable another context.
         ctxt.id = id
 
         contexts[id] = ctxt
@@ -897,6 +909,8 @@ def parse(doc):
         v = NonFraction()
         v.name = name
         v.context = ctxt
+
+        v.decimals = elt.get("decimals")
 
         format = elt.get("format")
         if format:
