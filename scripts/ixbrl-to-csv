@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
 """Reads an iXBRL file on input, and outputs a CSV representation.
+The CSV file contains one fact per row.  Columns are created for:
+namespace, fact name, fact value, the unit (if applicable), entity,
+entity scheme, period start, period end, instant date.  Additional
+columns are created for dimensions used, the header row has the dimension
+name.
 """
 
 import datetime
