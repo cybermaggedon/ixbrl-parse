@@ -21,7 +21,7 @@ maxwidth=40
 parser = argparse.ArgumentParser(
     description=__doc__
 )
-parser.add_argument('inputs', metavar='inputs', nargs=2,
+parser.add_argument('input', metavar='input', nargs=2,
                     help='Input files to compare')
 parser.add_argument('--format', '-f',
                     default="text",
@@ -30,8 +30,8 @@ parser.add_argument('--format', '-f',
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
 
-tree1 = ET.parse(args.inputs[0])
-tree2 = ET.parse(args.inputs[1])
+tree1 = ET.parse(args.input[0])
+tree2 = ET.parse(args.input[1])
 
 i1 = parse(tree1)
 i2 = parse(tree2)
