@@ -13,8 +13,8 @@ from ixbrl_parse.ixbrl import parse, Measure, Divide
 
 maxwidth=40
 
+XBRLI_NS = "http://www.xbrl.org/2003/instance"
 XBRLDI_NS = "http://xbrl.org/2006/xbrldi"
-XBRL_NS = "http://www.xbrl.org/2003/instance"
 XLINK_NS = "http://www.w3.org/1999/xlink"
 LINK_NS = "http://www.xbrl.org/2003/linkbase"
 
@@ -31,7 +31,56 @@ tree = ET.parse(args.input[0])
 
 i = parse(tree)
 
-root_elt = ET.Element("{%s}xbrl" % XBRL_NS)
+# Here we set up the namespace prefixes.  Strictly, none of this is necessary,
+# the resultant XML would be valid without this.  This is just cosmetics on
+# the XML, so that all the namespaces are declared at the top, makes things
+# easier for a human to read.
+
+# Start off with a set of standard namespaces.
+nsmap = {
+    # Would like to have xbrli as default namespace, but seems to cause an
+    # lxml segmentation fault.
+    "xbrli": XBRLI_NS,
+    "xbrldi": XBRLDI_NS,
+    "xlink": XLINK_NS,
+    "link": LINK_NS,
+}
+
+nsmap_set = set([v for v in nsmap.values()])
+nscount=0
+
+def maybe_add_namespace(q):
+    global nscount
+    if q.namespace not in nsmap_set:
+        nsmap["ns%d" % nscount] = q.namespace
+        nscount += 1
+        nsmap_set.add(q.namespace)
+
+def maybe_add_measure(m):
+    if isinstance(m, Measure):
+        maybe_add_namespace(m.measure)
+    elif isinstance(m, Divide):
+        maybe_add_measure(m.num)
+        maybe_add_measure(m.den)
+
+# Find dimensions in contexts, and add namespaces used by dimension names
+# and values
+for c in i.contexts.values():
+    for dim in c.dimensions:
+        maybe_add_namespace(dim.dimension)
+        maybe_add_namespace(dim.value)
+
+# Hunt through all values, and use namespaces in value names.
+for v in i.values.values():
+    maybe_add_namespace(v.name)
+
+# Hunt through all units, and use namespaces in measure names.
+for v in i.units.values():
+    maybe_add_measure(v)
+
+# End of namespace map jiggery-pokery.
+    
+root_elt = ET.Element("{%s}xbrl" % XBRLI_NS, nsmap=nsmap)
 
 for schema in i.schemas:
     ref_elt = ET.SubElement(root_elt, "{%s}schemaRef" % LINK_NS)
@@ -40,16 +89,16 @@ for schema in i.schemas:
 
 for cid, c in i.contexts.items():
 
-    c_elt = ET.SubElement(root_elt, "{%s}context" % XBRL_NS)
+    c_elt = ET.SubElement(root_elt, "{%s}context" % XBRLI_NS)
 
     if c.entity:
-        e_elt = ET.SubElement(c_elt, "{%s}entity" % XBRL_NS)
-        i_elt = ET.SubElement(e_elt, "{%s}identifier" % XBRL_NS)
+        e_elt = ET.SubElement(c_elt, "{%s}entity" % XBRLI_NS)
+        i_elt = ET.SubElement(e_elt, "{%s}identifier" % XBRLI_NS)
         i_elt.set("scheme", c.entity.scheme)
         i_elt.text = str(c.entity.id)
 
         if len(c.dimensions) > 0:
-            seg_elt = ET.SubElement(e_elt, "{%s}segment" % XBRL_NS)
+            seg_elt = ET.SubElement(e_elt, "{%s}segment" % XBRLI_NS)
             for dim in c.dimensions:
                 mem_elt = ET.SubElement(seg_elt,
                                         "{%s}explicitMember" % XBRLDI_NS)
@@ -57,31 +106,31 @@ for cid, c in i.contexts.items():
                 mem_elt.text = dim.value
 
     if c.instant:
-        p_elt = ET.SubElement(c_elt, "{%s}period" % XBRL_NS)
-        inst_elt = ET.SubElement(p_elt, "{%s}instant" % XBRL_NS)
+        p_elt = ET.SubElement(c_elt, "{%s}period" % XBRLI_NS)
+        inst_elt = ET.SubElement(p_elt, "{%s}instant" % XBRLI_NS)
         inst_elt.text = str(c.instant.instant)
 
     if c.period:
-        p_elt = ET.SubElement(c_elt, "{%s}period" % XBRL_NS)
+        p_elt = ET.SubElement(c_elt, "{%s}period" % XBRLI_NS)
         ET.SubElement(
-            p_elt, "{%s}startDate" % XBRL_NS
+            p_elt, "{%s}startDate" % XBRLI_NS
         ).text = str(c.period.start)
-        ET.SubElement(p_elt, "{%s}endDate" % XBRL_NS).text = str(c.period.end)
+        ET.SubElement(p_elt, "{%s}endDate" % XBRLI_NS).text = str(c.period.end)
 
     c_elt.set("id", cid)
 
 for u in i.units.values():
-    u_elt = ET.SubElement(root_elt, "{%s}unit" % XBRL_NS)
+    u_elt = ET.SubElement(root_elt, "{%s}unit" % XBRLI_NS)
     u_elt.set("id", u.id)
     if isinstance(u, Measure):
-        ET.SubElement(u_elt, "{%s}measure" % XBRL_NS).text = u.measure
+        ET.SubElement(u_elt, "{%s}measure" % XBRLI_NS).text = u.measure
     elif isinstance(u, Divide):
-        div_elt = ET.SubElement(u_elt, "{%s}divide" % XBRL_NS)
+        div_elt = ET.SubElement(u_elt, "{%s}divide" % XBRLI_NS)
         ET.SubElement(
-            ET.SubElement(div_elt, "{%s}unitNumerator" % XBRL_NS), "measure"
+            ET.SubElement(div_elt, "{%s}unitNumerator" % XBRLI_NS), "measure"
         ).text = u.num.measure
         ET.SubElement(
-            ET.SubElement(div_elt, "{%s}unitDenominator" % XBRL_NS), "measure"
+            ET.SubElement(div_elt, "{%s}unitDenominator" % XBRLI_NS), "measure"
         ).text = u.den.measure
 
 for v in i.values.values():
@@ -95,6 +144,7 @@ for v in i.values.values():
     if hasattr(v, "unit") and v.unit:
         v_elt.set("unitRef", v.unit.id)
 
-enc = ET.tostring(root_elt, pretty_print=True)
+enc = ET.tostring(root_elt, pretty_print=True, xml_declaration=True,
+                  encoding="utf-8")
 print(enc.decode("utf-8"))
 
