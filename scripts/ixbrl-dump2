@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+
+"""Reads an iXBRL file on input, and dumps the structure, semi-human-readable.
+"""
+
+import datetime
+from lxml import etree as ET
+import sys
+import argparse
+
+from ixbrl_parse.ixbrl import *
+
+maxwidth=40
+
+parser = argparse.ArgumentParser(
+    description=__doc__
+)
+parser.add_argument('input', metavar='input', nargs=1,
+                    help='Input iXBRL file')
+parser.add_argument('--verbose', '-v', action='store_true',
+                    help='Turn on verbose output.')
+parser.add_argument('--base-url', '-base', '-u',
+                    help='Base URL for further schema fetches')
+
+# Parse arguments
+args = parser.parse_args(sys.argv[1:])
+
+tree = ET.parse(args.input[0])
+
+i = parse(tree)
+if args.verbose:
+    sys.stderr.write("Read %s.\n" % args.input)
+
+# FIXME: Too many custom namespaces here.
+def qname_repr(qname):
+    nsmap = {
+        
+        "http://fasb.org/us-gaap/2019-01-31": "us-gaap",
+        "http://fasb.org/us-gaap/2020-01-31": "us-gaap",
+        "http://fasb.org/srt/2019-01-31": "us-srt",
+        "http://fasb.org/srt/2020-01-31": "us-srt",
+        "http://xbrl.sec.gov/dei/2020-01-31": "sec",
+        "http://xbrl.sec.gov/dei/2019-01-31": "sec",
+        "http://xbrl.sec.gov/country/2020-01-31": "country",
+        
+        "http://xbrl.frc.org.uk/cd/2019-01-01/business": "uk-bus",
+        "http://xbrl.frc.org.uk/fr/2019-01-01/core": "uk-core",
+        "http://xbrl.frc.org.uk/reports/2019-01-01/direp": "uk-direp",
+        "http://xbrl.frc.org.uk/reports/2019-01-01/aurep": "uk-aurep",
+        "http://xbrl.frc.org.uk/cd/2019-01-01/currencies": "currencies",
+        "http://xbrl.frc.org.uk/cd/2019-01-01/countries": "countries",
+        "http://xbrl.frc.org.uk/cd/2014-09-01/countries": "countries",
+        "http://xbrl.frc.org.uk/fr/2014-09-01/core": "uk-core",
+        "http://xbrl.frc.org.uk/cd/2014-09-01/business": "uk-bus",
+        "http://xbrl.frc.org.uk/char/2019-01-01": "char",
+        "http://xbrl.frc.org.uk/reports/2014-09-01/direp": "uk-direp",
+        "http://xbrl.frc.org.uk/reports/2014-09-01/aurep": "uk-aurep",
+        "http://xbrl.frc.org.uk/reports/2014-09-01/accrep": "uk-accrep",
+        "http://xbrl.frc.org.uk/reports/2019-01-01/accrep": "uk-accrep",
+
+        "http://www.hmrc.gov.uk/schemas/ct/comp/2020-04-01": "ct-comp",
+        "http://www.hmrc.gov.uk/schemas/ct/dpl/2019-01-01": "ct-dpl",
+
+        "http://xbrl.ifrs.org/taxonomy/2017-03-09/ifrs-full": "ifrs-full",
+
+    }
+
+    if qname.namespace in nsmap:
+        return nsmap[qname.namespace] + ":" + qname.localname
+
+    return str(qname)
+
+schema = i.load_schema(args.base_url)
+
+def get_label(name):
+
+    try:
+        id = schema.element[name].get("id")
+        lbl_id = schema.label_arcs[id]
+
+        LABEL = "http://www.xbrl.org/2003/role/label"
+
+        lbl = schema.labels[(lbl_id, LABEL)]
+
+        return lbl
+    except:
+        return qname_repr(name)
+
+def cdump(ctxt, level=0):
+    indent = "    " * level
+    for rel, c in ctxt.children.items():
+        if isinstance(rel, Entity):
+            print("%sEntity: %s (%s)" % (
+                indent, rel.id, rel.scheme
+            ))
+        if isinstance(rel, Period):
+            print("%sPeriod: %s - %s" % (
+                indent, rel.start, rel.end,
+            ))
+        if isinstance(rel, Instant):
+            print("%sInstant: %s" % (
+                indent, rel.instant
+            ))
+        if isinstance(rel, Dimension):
+            print("%sDimension: %s = %s" % (
+                indent, qname_repr(rel.dimension), qname_repr(rel.value)
+            ))
+
+        for name, value in c.values.items():
+
+            label = get_label(name)
+
+            if hasattr(value, "unit"):
+                print("%s- %s: %s" % (
+                    indent, label, value
+                ))
+            else:
+                if len(str(value)) > maxwidth:
+                    print("%s- %s: %s..." % (
+                        indent, label, str(value)[:40]
+                    ))
+                else:
+                    print("%s- %s: %s" % (
+                        indent, label, str(value)
+                    ))
+                    
+        cdump(c, level + 1)
+
+
+cdump(i.root)
+
