@@ -74,18 +74,11 @@ schema = i.load_schema(args.base_url)
 
 def get_label(name):
 
-    try:
+    lbl = schema.get_label(name)
 
-        loc = schema.element_id[name]
-        id = schema.label_loc[loc]
-        lbl_id = schema.label_arcs[id]
+    if lbl: return lbl
 
-        LABEL = "http://www.xbrl.org/2003/role/label"
-        lbl = schema.labels[(lbl_id, LABEL)]
-        return lbl
-
-    except Exception as e:
-        return qname_repr(name)
+    return qname_repr(name)
 
 def cdump(ctxt, level=0):
     indent = "    " * level
@@ -103,8 +96,12 @@ def cdump(ctxt, level=0):
                 indent, rel.instant
             ))
         if isinstance(rel, Dimension):
+
+            dim_lbl = get_label(rel.dimension)
+            seg_lbl = get_label(rel.value)
+
             print("%sDimension: %s = %s" % (
-                indent, qname_repr(rel.dimension), qname_repr(rel.value)
+                indent, dim_lbl, seg_lbl
             ))
 
         for name, value in c.values.items():

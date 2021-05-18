@@ -27,6 +27,21 @@ class Schema:
         s = Schema()
         s.load_uri(uri)
 
+    def get_label(self, name):
+
+        try:
+
+            loc = self.element_id[name]
+            id = self.label_loc[loc]
+            lbl_id = self.label_arcs[id]
+
+            LABEL = "http://www.xbrl.org/2003/role/label"
+            lbl = self.labels[(lbl_id, LABEL)]
+            return lbl
+
+        except Exception as e:
+            return None
+
     def fetch_cached_resource(self, uri):
 
         try:
