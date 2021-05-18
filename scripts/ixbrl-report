@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 
-"""Reads an iXBRL file on input, and dumps the structure, semi-human-readable.
+"""Reads an iXBRL file on input, and dumps the structure.  The XBRL schema
+is downloaded, and schema labels are used in the output to label the output
+for human readability.
+
+Schemas are cached in a local .xbrl-cache directory.  Note: some registries may
+have download limits, multiple tries may be needed to get a successful
+download if you trip a limit.  You may need to use the --base-url to ensure
+the correct URLs are used for schema downloads in the case where schemas are
+relative references within the iXBRL file.
 """
 
 import datetime

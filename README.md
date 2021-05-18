@@ -4,7 +4,10 @@
 ## Introduction
 
 - Python library code, parses iXBRL files.
-- Script `ixbrl-dump` emits iXBRL tagged data in a human-readable dump.
+- Script `ixbrl-dump` emits iXBRL tagged data in a semi-human-readable dump.
+- Script `ixbrl-report` emits iXBRL tagged data in a human-readable report.
+  This involves downloading referenced XBRL schema to get the human-readable
+  fact labels.
 - Script `ixbrl-to-rdf` emits iXBRL tagged data in RDF.
 - Script `ixbrl-to-csv` outputs iXBRL tagged data in a CSV format.
 - Script `ixbrl-to-json` emits iXBRL tagged data in JSON.
@@ -53,6 +56,20 @@ ixbrl-to-json accts.html
 Dump iXBRL values:
 ```
 ixbrl-dump accts.html
+```
+
+Human-readable report:
+```
+ixbrl-report accts.html
+```
+
+Human-readable report from SEC EDGAR.  Note need to tell ixbrl-report the
+URL of the original report in order to know where to fetch the
+custom schema (relative URLs are used):
+
+```
+ixbrl-report ixbrl/10k/lyft-20201231.htm \
+    -b https://www.sec.gov/Archives/edgar/data/1759509/000175950921000011/lyft-20201231.htm
 ```
 
 Dump iXBRL as XBRL:

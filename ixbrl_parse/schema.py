@@ -1,8 +1,11 @@
 
 import urllib
+import os
 import requests
 import hashlib
 from lxml import etree as ET
+
+cache_directory = ".xbrl-cache"
 
 # Create a hex hash, short-hand
 def create_hash(thing):
@@ -10,6 +13,13 @@ def create_hash(thing):
     return hash.hexdigest()
 
 class Schema:
+
+    """Minimal XBRL schema processing in order to get hold of labels.
+    This class downloads XML schema resources behind-the-scenes and
+    caches in a local .xbrl-cache directory.  The load_uri method is used
+    to load resources beginning with the base taxonomy schema, and the base_url
+    parameter is used to help resolve URLs.
+    """
 
     def __init__(self):
         self.simple = {}
@@ -45,11 +55,11 @@ class Schema:
     def fetch_cached_resource(self, uri):
 
         try:
-            os.mkdir("cache")
+            os.mkdir(cache_directory + "/")
         except Exception as e:
             pass
 
-        localname = "cache/%s" % create_hash(uri)
+        localname = "%s/%s" % (cache_directory, create_hash(uri))
 
         try:
             return open(localname, "rb").read()
