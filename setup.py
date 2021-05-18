@@ -23,10 +23,12 @@ setuptools.setup(
     ],
     scripts=[
         "scripts/ixbrl-dump",
+        "scripts/ixbrl-report",
         "scripts/ixbrl-to-rdf",
         "scripts/ixbrl-to-csv",
-        "scripts/ixbrl-to-xbrl",
         "scripts/ixbrl-to-json",
+        "scripts/ixbrl-to-xbrl",
+        "scripts/ixbrl-to-kv",
         "scripts/ixbrl-diff"
     ]
 )

@@ -2,7 +2,9 @@
 
 """Reads an iXBRL file on input, and dumps the structure.  The XBRL schema
 is downloaded, and schema labels are used in the output to label the output
-for human readability.
+for human readability.  The report likely contains less information and 
+less structure than the original iXBRL file, so you may be better off just
+loading that into a browser.
 
 Schemas are cached in a local .xbrl-cache directory.  Note: some registries may
 have download limits, multiple tries may be needed to get a successful
