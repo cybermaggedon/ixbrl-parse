@@ -644,6 +644,7 @@ class Schema:
         self.complex = {}
         self.attribute_group = {}
         self.element = {}
+        self.element_id = {}
         self.labels = {}
         self.label_arcs = {}
         self.label_loc = {}
@@ -667,6 +668,8 @@ class Schema:
             return open(localname, "rb").read()
         except:
             pass
+
+#        sys.stderr.write(str("%s...\n" % uri))
 
         resp = requests.get(uri)
         if resp.status_code != 200:
@@ -742,7 +745,16 @@ class Schema:
 
         for elt in tree.findall("element", nsmap):
             name = ET.QName(tns, elt.get("name"))
+            try:
+                id = elt.get("id")
+                id = urllib.parse.urljoin(uri, "#" + id)
+            except:
+                id = None
+
             self.element[name] = elt
+
+            if id != None:
+                self.element_id[name] = id
 
         for elt in tree.findall("annotation/appinfo", nsmap):
 
