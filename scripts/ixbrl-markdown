@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+
+"""Reads an iXBRL file on input, and dumps the structure.  The XBRL schema
+is downloaded, and schema labels are used in the output to label the output
+for human readability.  The report likely contains less information and 
+less structure than the original iXBRL file, so you may be better off just
+loading that into a browser.
+
+Schemas are cached in a local .xbrl-cache directory.  Note: some registries may
+have download limits, multiple tries may be needed to get a successful
+download if you trip a limit.  You may need to use the --base-url to ensure
+the correct URLs are used for schema downloads in the case where schemas are
+relative references within the iXBRL file.
+"""
+
+import datetime
+from lxml import etree as ET
+import sys
+import argparse
+from tabulate import tabulate
+
+from ixbrl_parse.ixbrl import *
+
+parser = argparse.ArgumentParser(
+    description=__doc__
+)
+parser.add_argument('input', metavar='input', nargs=1,
+                    help='Input iXBRL file')
+parser.add_argument('--verbose', '-v', action='store_true',
+                    help='Turn on verbose output.')
+parser.add_argument('--base-url', '-base', '-u',
+                    help='Base URL for further schema fetches')
+
+# Parse arguments
+args = parser.parse_args(sys.argv[1:])
+
+tree = ET.parse(args.input[0])
+
+i = parse(tree)
+if args.verbose:
+    sys.stderr.write("Read %s.\n" % args.input)
+
+# FIXME: Too many custom namespaces here.
+def qname_repr(qname):
+    return str(qname)
+
+schema = i.load_schema(args.base_url)
+
+def get_label(name):
+
+    lbl = schema.get_label(name)
+
+    if lbl: return lbl
+
+    return qname_repr(name)
+
+def cdump(ctxt, level=0):
+
+    for rel, c in ctxt.children.items():
+
+        title = ""
+
+        if isinstance(rel, Entity):
+            title += "Entity: %s (%s) " % (
+                rel.id, rel.scheme
+            )
+        if isinstance(rel, Period):
+            title += "Period: %s - %s " % (
+                rel.start, rel.end,
+            )
+        if isinstance(rel, Instant):
+            title += "Instant: %s " % (
+                rel.instant
+            )
+        if isinstance(rel, Dimension):
+
+            dim_lbl = get_label(rel.dimension)
+            seg_lbl = get_label(rel.value)
+
+            title += "Dimension: %s = %s " % (
+                dim_lbl, seg_lbl
+            )
+
+        print(("#" * (level + 1)) + " " + title)
+        print()
+
+        rows = []
+
+        if len(c.values) > 0:
+
+            for name, value in c.values.items():
+
+                label = get_label(name)
+                value = str(value)
+
+                rows.append((label[:50], value[:30]))
+
+            print(tabulate(rows, tablefmt="github"))
+            print()
+
+        cdump(c, level + 1)
+
+
+print()
+cdump(i.root)
+print()
