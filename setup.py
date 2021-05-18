@@ -28,6 +28,7 @@ setuptools.setup(
     scripts=[
         "scripts/ixbrl-dump",
         "scripts/ixbrl-report",
+        "scripts/ixbrl-markup",
         "scripts/ixbrl-to-rdf",
         "scripts/ixbrl-to-csv",
         "scripts/ixbrl-to-json",

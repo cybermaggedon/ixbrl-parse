@@ -14,6 +14,7 @@
 - Script `ixbrl-to-xbrl` emits iXBRL tagged data as an XBRL instance.
 - Script `ixbrl-to-kv` emits iXBRL in a key-value form easily consumed
   by scripts.
+- Script `ixbrl-markdown` emits iXBRL tagged data in a markdown report.
 
 ## Sample data
 
