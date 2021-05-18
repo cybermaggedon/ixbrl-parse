@@ -9,12 +9,11 @@ from lxml import etree as ET
 import datetime
 import sys
 import hashlib
-import requests
 import os
-import urllib
 
 from . import transform
 from . value import *
+from . schema import Schema
 
 from rdflib import URIRef
 
@@ -636,143 +635,6 @@ class Dimension(Relationship):
         return URIRef("%s#%s" % (
             self.value.namespace, self.value.localname
         ))
-
-class Schema:
-
-    def __init__(self):
-        self.simple = {}
-        self.complex = {}
-        self.attribute_group = {}
-        self.element = {}
-        self.element_id = {}
-        self.labels = {}
-        self.label_arcs = {}
-        self.label_loc = {}
-
-    @staticmethod
-    def load(uri):
-
-        s = Schema()
-        s.load_uri(uri)
-
-    def fetch_cached_resource(self, uri):
-
-        try:
-            os.mkdir("cache")
-        except Exception as e:
-            pass
-
-        localname = "cache/%s" % create_hash(uri)
-
-        try:
-            return open(localname, "rb").read()
-        except:
-            pass
-
-#        sys.stderr.write(str("%s...\n" % uri))
-
-        resp = requests.get(uri)
-        if resp.status_code != 200:
-            raise RuntimeError("Response code: %d" % resp.status_code)
-
-        with open(localname, "wb") as f:
-            for chunk in resp.iter_content(16384):
-                f.write(chunk)
-
-        return open(localname, "rb").read()
-
-    def load_labels(self, uri):
-        rsrc = self.fetch_cached_resource(uri)
-        tree = ET.fromstring(rsrc)
-
-        nsmap = {
-            "xmls": "http://www.w3.org/2001/XMLSchema",
-            None: "http://www.xbrl.org/2003/linkbase",
-            "xlink": "http://www.w3.org/1999/xlink"
-        }
-
-        for elt in tree.findall("labelLink/loc", nsmap):
-            src = elt.get("{%s}href" % nsmap["xlink"])
-            src = urllib.parse.urljoin(uri, src)
-            label = elt.get("{%s}label" % nsmap["xlink"])
-            self.label_loc[src] = label
-
-        for elt in tree.findall("labelLink/labelArc", nsmap):
-            f = elt.get("{%s}from" % nsmap["xlink"])
-            t = elt.get("{%s}to" % nsmap["xlink"])
-            self.label_arcs[f] = t
-
-        for elt in tree.findall("labelLink/label", nsmap):
-            lbl = elt.get("{%s}label" % nsmap["xlink"])
-            role = elt.get("{%s}role" % nsmap["xlink"])
-            self.labels[(lbl, role)] = elt.text
-
-    def load_uri(self, uri, base_uri=None):
-
-        if base_uri != None:
-            uri = urllib.parse.urljoin(base_uri, uri)
-
-        nsmap = {
-            None: "http://www.w3.org/2001/XMLSchema",
-            "link": "http://www.xbrl.org/2003/linkbase",
-            "xlink": "http://www.w3.org/1999/xlink"
-        }
-
-        rsrc = self.fetch_cached_resource(uri)
-
-        tree = ET.fromstring(rsrc)
-
-        tns = tree.get("targetNamespace")
-
-        # Process imports
-        for elt in tree.findall("import", nsmap):
-            ns = elt.get("namespace")
-            loc = elt.get("schemaLocation")
-            loc = urllib.parse.urljoin(uri, loc)
-            self.load_uri(loc, base_uri)
-
-        for elt in tree.findall("simpleType", nsmap):
-            name = ET.QName(nsmap[None], elt.get("name"))
-            self.simple[name] = elt
-
-        for elt in tree.findall("complexType", nsmap):
-            name = ET.QName(nsmap[None], elt.get("name"))
-            self.complex[name] = elt
-
-        for elt in tree.findall("attributeGroup", nsmap):
-            name = ET.QName(nsmap[None], elt.get("name"))
-            self.attribute_group[name] = elt
-
-        for elt in tree.findall("element", nsmap):
-            name = ET.QName(tns, elt.get("name"))
-            try:
-                id = elt.get("id")
-                id = urllib.parse.urljoin(uri, "#" + id)
-            except:
-                id = None
-
-            self.element[name] = elt
-
-            if id != None:
-                self.element_id[name] = id
-
-        for elt in tree.findall("annotation/appinfo", nsmap):
-
-            for elt2 in elt.findall("link:linkbaseRef", nsmap):
-                role = elt2.get("{%s}role" % nsmap["xlink"])
-
-                if role == "http://www.xbrl.org/2003/role/labelLinkbaseRef":
-
-                    loc = elt2.get("{%s}href" % nsmap["xlink"])
-                    loc = urllib.parse.urljoin(uri, loc)
-                    self.load_labels(loc)
-
-                    
-class Schemas:
-    def __init__(self):
-        self.map = {}
-    def load(self, uri):
-        self.map[uri] = Schema.load(uri)
 
 class Ixbrl:
     """
