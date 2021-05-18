@@ -15,7 +15,7 @@
 - Script `ixbrl-to-kv` emits iXBRL in a key-value form easily consumed
   by scripts.
 
-## Development
+## Sample data
 
 There's a bunch of sample iXBRL files grabbed from various places in
 the `ixbrl` directory: US 10-K and 10-Q filings, a few random things
