@@ -194,7 +194,7 @@ class Context:
 
         return cflat
 
-    def to_dict(self):
+    def to_dict(self, schema=None):
 
         ret = {}
 
@@ -206,7 +206,7 @@ class Context:
                 if "entity" not in ret:
                     ret["entity"] = {}
                 id = rel.id
-                obj = ctxt.to_dict()
+                obj = ctxt.to_dict(schema)
                 obj["id"] = rel.id
                 obj["scheme"] = rel.scheme
                 ret["entity"][id] = obj                
@@ -214,7 +214,7 @@ class Context:
                 if "period" not in ret:
                     ret["period"] = {}
                 id = str(rel.start) + ":" + str(rel.end)
-                obj = ctxt.to_dict()
+                obj = ctxt.to_dict(schema)
                 obj["start"] = str(rel.start)
                 obj["end"] = str(rel.end)
                 ret["period"][id] = obj
@@ -222,7 +222,7 @@ class Context:
                 if "instant" not in ret:
                     ret["instant"] = {}
                 id = str(rel.instant)
-                obj = ctxt.to_dict()
+                obj = ctxt.to_dict(schema)
                 obj["date"] = str(rel.instant)
                 ret["instant"][id] = obj
             if isinstance(rel, Dimension):
@@ -230,11 +230,15 @@ class Context:
                 value = rel.value.localname
                 if dim not in ret:
                     ret[dim] = {}
-                obj = ctxt.to_dict()
+                    if schema:
+                        ret[dim]["label"] = schema.get_label(rel.dimension)
+                obj = ctxt.to_dict(schema)
                 ret[dim][value] = obj
+                if schema:
+                    ret[dim][value]["label"] = schema.get_label(rel.value)
 
         for name, value in self.values.items():
-            ret[name.localname] = value.to_dict()
+            ret[name.localname] = value.to_dict(schema)
 
         return ret
 
@@ -528,8 +532,13 @@ class NonNumeric(Value):
             value = String(raw.strip())
         return value
 
-    def to_dict(self):
-        return str(self.to_value().get_value())
+    def to_dict(self, schema=None):
+        ret = {
+            "value": str(self.to_value().get_value())
+        }
+        if schema: ret["label"] = schema.get_label(self.name)
+        if self.unit: ret["unit"] = str(self.unit)
+        return ret
 
     def flatten(self):
         return {
@@ -552,8 +561,13 @@ class NonFraction(Value):
             if raw in { "nil", "None", "none", "", "no", "No" }: raw = 0
             value = Float(float(raw) * self.scale, self.unit)
         return value
-    def to_dict(self):
-        return self.to_value().get_value()
+    def to_dict(self, schema=None):
+        ret = {
+            "value": self.to_value().get_value()
+        }
+        if schema: ret["label"] = schema.get_label(self.name)
+        if self.unit: ret["unit"] = str(self.unit)
+        return ret
 
     def flatten(self):
         return {
@@ -747,8 +761,8 @@ class XbrlInstance:
 
         return None
 
-    def to_dict(self):
-        return self.root.to_dict()
+    def to_dict(self, schema=None):
+        return self.root.to_dict(schema)
 
     def flatten(self):
         ret = {

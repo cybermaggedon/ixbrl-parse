@@ -54,7 +54,7 @@ class MonthDay(Val):
         return "--%02d-%02d" % (self.m, self.d)
     def to_rdf(self):
         return Literal(str(self), datatype=XSD.string)
-    def to_value(self):
+    def get_value(self):
         return self.to_string()
 
 class Duration(Val):
@@ -63,8 +63,12 @@ class Duration(Val):
     def to_rdf(self):
         return Literal(str(self), datatype=XSD.duration)
     def to_string(self):
+
         D = self.value.days
         s = self.value.seconds
+
+        if D == 0 and s == 0:
+            return "P0D"
 
         if D > 356:
             Y = int(D / 356)
@@ -109,5 +113,7 @@ class Duration(Val):
                 ret += "%dS" % s
 
         return ret
-    def to_value(self):
+
+    def get_value(self):
         return self.to_string()
+
