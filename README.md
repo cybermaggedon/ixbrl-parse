@@ -54,6 +54,12 @@ Parse iXBRL and output in JSON:
 ixbrl-to-json accts.html
 ```
 
+Schema labels in JSON:
+```
+ixbrl-to-json ixbrl/10k/lyft-20201231.htm -f labeled \
+    -b https://www.sec.gov/Archives/edgar/data/1759509/000175950921000011/lyft-20201231.htm
+```
+
 Dump iXBRL values:
 ```
 ixbrl-dump accts.html
