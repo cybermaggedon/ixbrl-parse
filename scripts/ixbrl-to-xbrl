@@ -141,7 +141,7 @@ for v in i.values.values():
     if hasattr(v, "decimals") and v.decimals:
         v_elt.set("decimals", str(v.decimals))
 
-    if hasattr(v, "unit") and v.unit:
+    if v.unit:
         v_elt.set("unitRef", v.unit.id)
 
 enc = ET.tostring(root_elt, pretty_print=True, xml_declaration=True,

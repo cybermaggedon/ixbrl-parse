@@ -64,6 +64,8 @@ class Unit:
 class NoUnit(Unit):
     def __str__(self):
         return ""
+    def __bool__(self):
+        return False
 
 class Measure(Unit):
     """A simple measurement unit"""
@@ -71,6 +73,8 @@ class Measure(Unit):
         self.measure = measure
     def __str__(self):
         return str(self.measure.localname)
+    def __bool__(self):
+        return True
 
 class Divide(Unit):
     """A unit formed by dividing two measurements"""
@@ -79,6 +83,8 @@ class Divide(Unit):
         self.den = den
     def __str__(self):
         return str(self.num) + "/" + str(self.den)
+    def __bool__(self):
+        return True
 
 class Context:
     """An iXBRL context
