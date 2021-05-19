@@ -88,7 +88,7 @@ def cdump(ctxt, level=0):
                 indent, qname_repr(rel.dimension), qname_repr(rel.value)
             ))
         for name, value in c.values.items():
-            if hasattr(value, "unit"):
+            if value.unit:
                 print("%s- %s: %s" % (
                     indent, qname_repr(name), value
                 ))

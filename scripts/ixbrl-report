@@ -118,7 +118,7 @@ def cdump(ctxt, level=0):
 
             label = get_label(name)
 
-            if hasattr(value, "unit"):
+            if value.unit:
                 print("%s- %s: %s" % (
                     indent, label, value
                 ))
