@@ -47,11 +47,8 @@ def qname_repr(qname):
 schema = i.load_schema(args.base_url)
 
 def get_label(name):
-
     lbl = schema.get_label(name)
-
     if lbl: return lbl
-
     return qname_repr(name)
 
 def cdump(ctxt, level=0):

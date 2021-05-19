@@ -14,6 +14,7 @@ import os
 from . import transform
 from . value import *
 from . schema import Schema
+from . import dataframe
 
 from rdflib import URIRef
 
@@ -59,6 +60,10 @@ def to_qname(elt, name):
 class Unit:
     """A unit"""
     pass
+
+class NoUnit(Unit):
+    def __str__(self):
+        return ""
 
 class Measure(Unit):
     """A simple measurement unit"""
@@ -133,6 +138,7 @@ class Context:
 
     """
     def __init__(self):
+        self.id = None
         self.entity = None
         self.period = None
         self.instant = None
@@ -247,6 +253,7 @@ class Context:
             print("    Instant:", self.instant)
         for d in self.dimensions:
             print("    %s: %s" % (d.dimension, d.value))
+
     def get_relationships(self):
 
         rels = []
@@ -443,6 +450,17 @@ class Context:
 
         return tpl
 
+    def get_values_df(self):
+        return dataframe.values_to_df(self.values)
+
+    def context_iter(self):
+
+        yield self
+
+        for c in self.children.values():
+            for i in c.context_iter():
+                yield i
+
 class Value:
     """An iXBRL value"""
     def __init__(self):
@@ -487,6 +505,9 @@ class Value:
 class NonNumeric(Value):
     """Represents an iXBRL nonNumeric value"""
 
+    def __init__(self):
+        self.unit = NoUnit()
+
     def to_value(self):
         raw = self.get_raw()
         if hasattr(self, "format") and self.format:
@@ -507,6 +528,9 @@ class NonNumeric(Value):
 
 class NonFraction(Value):
     """Represents an iXBRL nonFraction value"""
+
+    def __init__(self):
+        self.unit = NoUnit()
 
     def to_value(self):
         raw = self.get_raw()
@@ -529,6 +553,8 @@ class NonFraction(Value):
 class Fraction(Value):
 
     """Represents an iXBRL fraction value: Not implemented"""
+    def __init__(self):
+        self.unit = NoUnit()
 
     def get_raw(self):
         """Represent as string"""
@@ -636,7 +662,7 @@ class Dimension(Relationship):
             self.value.namespace, self.value.localname
         ))
 
-class Ixbrl:
+class XbrlInstance:
     """
     Attributes
     ----------
@@ -678,10 +704,8 @@ class Ixbrl:
 
     def context_iter(self):
 
-        context_tree = {}
-
-        for c in self.contexts.values():
-            yield c, c
+        for c in self.root.context_iter():
+            yield c
 
     def get_entity_name(self):
 
@@ -741,210 +765,219 @@ class Ixbrl:
 
         return s
 
-# Takes an ElementTree document and extracts a dict mapping iXBRL tag names
-# to values.
+    @staticmethod
+    def parse(doc, base_url=None):
+        """ Parses an lxml ElementTree containing an iXBRL document.
+
+        Returns
+        -------
+        An XbrlInstance object.
+        """
+
+        i = XbrlInstance()
+
+        values = {}
+
+        ns = {
+            "ix": "http://www.xbrl.org/2013/inlineXBRL",
+            "xbrli": "http://www.xbrl.org/2003/instance",
+            "xbrldi": "http://xbrl.org/2006/xbrldi",
+            "xlink": "http://www.w3.org/1999/xlink",
+            "link": "http://www.xbrl.org/2003/linkbase"
+        }
+
+        units = {}
+
+        # FIXME: Delete entity_name from here.
+        entity_name = None
+
+        i.schemas = []
+        for elt in doc.findall(".//link:schemaRef", ns):
+            i.schemas.append(elt.get(ET.QName(ns["xlink"], "href")))
+
+        for elt in doc.findall(".//ix:nonNumeric", ns):
+
+            name = to_qname(elt, elt.get("name"))
+            v = NonNumeric()
+            v.elements = [elt]
+
+            # Companies House
+            ent_legal_name = ET.QName(
+                "http://xbrl.frc.org.uk/cd/2019-01-01/business",
+                "EntityCurrentLegalOrRegisteredName"
+            )
+
+            # SEC
+            ent_reg_name = ET.QName(
+                "http://xbrl.sec.gov/dei/2020-01-31",
+                "EntityRegistrantName"
+            )
+
+            # ESEF
+            name_of_rep_ent = ET.QName(
+                "http://xbrl.ifrs.org/taxonomy/2017-03-09/ifrs-full",
+                "NameOfReportingEntityOrOtherMeansOfIdentification"
+            )
+
+            if entity_name == None:
+                if name == ent_legal_name:
+                    entity_name = v.to_string()
+                if name == ent_reg_name:
+                    entity_name = v.to_string()
+                if name == name_of_rep_ent:
+                    entity_name = v.to_string()
+
+        for unit_elt in doc.findall(".//xbrli:unit", ns):
+
+            id = unit_elt.get("id")
+
+            try:
+                div_elt = unit_elt.find("xbrli:divide", ns)
+                num_elt = div_elt.find(
+                    "./xbrli:unitNumerator/xbrli:measure", ns
+                )
+                den_elt = div_elt.find(
+                    "./xbrli:unitDenominator/xbrli:measure", ns
+                )
+
+                unit = Divide(
+                    Measure(to_qname(num_elt, num_elt.text)),
+                    Measure(to_qname(den_elt, den_elt.text))
+                )
+                unit.id = id
+
+                units[id] = unit
+
+                continue
+
+            except:
+                pass
+
+            meas_elt = unit_elt.find("xbrli:measure", ns)
+            units[id] = Measure(to_qname(meas_elt, meas_elt.text))
+            units[id].id = id
+
+        contexts = {}
+
+        for ctxt_elt in doc.findall(".//xbrli:context", ns):
+
+            rels = []
+
+            id = ctxt_elt.get("id")
+
+            for ent_elt in ctxt_elt.findall(".//xbrli:entity", ns):
+                for id_elt in ent_elt.findall(".//xbrli:identifier", ns):
+                    rels.append(Entity(id_elt.text, id_elt.get("scheme")))
+
+            for ent_elt in ctxt_elt.findall(".//xbrli:period", ns):
+                try:
+                    sd = ent_elt.find(".//xbrli:startDate", ns).text
+                    sd = datetime.datetime.fromisoformat(sd).date()
+                    ed = ent_elt.find(".//xbrli:endDate", ns).text
+                    ed = datetime.datetime.fromisoformat(ed).date()
+                    rels.append(Period(sd, ed))
+                except:
+                    pass
+
+                try:
+                    inst = ent_elt.find(".//xbrli:instant", ns).text
+                    inst = datetime.datetime.fromisoformat(inst).date()
+                    rels.append(Instant(inst))
+                except:
+                    pass
+
+            for seg_elt in ctxt_elt.findall(".//xbrli:segment", ns):
+                for em_elt in seg_elt.findall(".//xbrldi:explicitMember", ns):
+
+                    dimension = to_qname(em_elt, em_elt.get("dimension"))
+                    value = to_qname(em_elt, em_elt.text.strip())
+
+                    rels.append(Dimension(dimension, value))
+
+            ctxt = i.get_context(rels)
+
+            # This might relable another context.
+            ctxt.id = id
+
+            contexts[id] = ctxt
+
+        continuation = {}
+
+        for elt in doc.findall(".//ix:continuation", ns):
+            cid = elt.get("id")
+            continuation[cid] = elt
+
+        for elt in doc.findall(".//ix:nonNumeric", ns):
+            name = to_qname(elt, elt.get("name"))
+            cont = elt.get("continuedAt")
+            ctxt = contexts[elt.get("contextRef")]
+            key = (ctxt, name)
+            v = NonNumeric()
+            v.name = name
+            v.context = ctxt
+            v.elements = [elt]
+
+            format = elt.get("format")
+            if format:
+                v.format = to_qname(elt, format)
+
+            ctxt.values[name] = v
+            values[key] = v
+
+            while cont != None:
+                contelt = continuation[cont]
+                for s in contelt:
+                    v.elements.append(s)
+                cont = contelt.get("continuedAt")
+
+        for elt in doc.findall(".//ix:nonFraction", ns):
+            name = to_qname(elt, elt.get("name"))
+            ctxt = contexts[elt.get("contextRef")]
+            cont = elt.get("continuedAt")
+            key = (ctxt, name)
+
+            try:
+                scale = elt.get("scale")
+                scale = 10 ** int(scale)
+            except:
+                scale = 1
+
+            v = NonFraction()
+            v.name = name
+            v.context = ctxt
+
+            v.decimals = elt.get("decimals")
+
+            format = elt.get("format")
+            if format:
+                v.format = to_qname(elt, format)
+            else:
+                v.format = None
+
+            v.scale = scale
+            v.elements = [elt]
+            v.unit = units[elt.get("unitRef")]
+            ctxt.values[name] = v
+            values[key] = v
+
+            while cont != None:
+                contelt = continuation[cont]
+                for s in contelt:
+                    v.elements.append(s)
+                cont = contelt.get("continuedAt")
+
+        i.units = units
+        i.values = values
+        i.contexts = contexts
+
+        return i
+
+# Takes an ElementTree document and extracts an XbrlInstance
 def parse(doc):
     """ Parses an lxml ElementTree containing an iXBRL document.
 
     Returns
     -------
-    An Ixbrl object.
+    An XbrlInstance object.
     """
-
-    i = Ixbrl()
-
-    values = {}
-
-    ns = {
-        "ix": "http://www.xbrl.org/2013/inlineXBRL",
-        "xbrli": "http://www.xbrl.org/2003/instance",
-        "xbrldi": "http://xbrl.org/2006/xbrldi",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "link": "http://www.xbrl.org/2003/linkbase"
-    }
-
-    units = {}
-
-    # FIXME: Delete entity_name from here.
-    entity_name = None
-
-    i.schemas = []
-    for elt in doc.findall(".//link:schemaRef", ns):
-        i.schemas.append(elt.get(ET.QName(ns["xlink"], "href")))
-
-    for elt in doc.findall(".//ix:nonNumeric", ns):
-
-        name = to_qname(elt, elt.get("name"))
-        v = NonNumeric()
-        v.elements = [elt]
-
-        # Companies House
-        ent_legal_name = ET.QName(
-            "http://xbrl.frc.org.uk/cd/2019-01-01/business",
-            "EntityCurrentLegalOrRegisteredName"
-        )
-
-        # SEC
-        ent_reg_name = ET.QName(
-            "http://xbrl.sec.gov/dei/2020-01-31",
-            "EntityRegistrantName"
-        )
-
-        # ESEF
-        name_of_rep_ent = ET.QName(
-            "http://xbrl.ifrs.org/taxonomy/2017-03-09/ifrs-full",
-            "NameOfReportingEntityOrOtherMeansOfIdentification"
-        )
-
-        if entity_name == None:
-            if name == ent_legal_name:
-                entity_name = v.to_string()
-            if name == ent_reg_name:
-                entity_name = v.to_string()
-            if name == name_of_rep_ent:
-                entity_name = v.to_string()
-
-    for unit_elt in doc.findall(".//xbrli:unit", ns):
-
-        id = unit_elt.get("id")
-
-        try:
-            div_elt = unit_elt.find("xbrli:divide", ns)
-            num_elt = div_elt.find(
-                "./xbrli:unitNumerator/xbrli:measure", ns
-            )
-            den_elt = div_elt.find(
-                "./xbrli:unitDenominator/xbrli:measure", ns
-            )
-
-            unit = Divide(
-                Measure(to_qname(num_elt, num_elt.text)),
-                Measure(to_qname(den_elt, den_elt.text))
-            )
-            unit.id = id
-
-            units[id] = unit
-
-            continue
-
-        except:
-            pass
-
-        meas_elt = unit_elt.find("xbrli:measure", ns)
-        units[id] = Measure(to_qname(meas_elt, meas_elt.text))
-        units[id].id = id
-
-    contexts = {}
-
-    for ctxt_elt in doc.findall(".//xbrli:context", ns):
-
-        rels = []
-
-        id = ctxt_elt.get("id")
-
-        for ent_elt in ctxt_elt.findall(".//xbrli:entity", ns):
-            for id_elt in ent_elt.findall(".//xbrli:identifier", ns):
-                rels.append(Entity(id_elt.text, id_elt.get("scheme")))
-
-        for ent_elt in ctxt_elt.findall(".//xbrli:period", ns):
-            try:
-                sd = ent_elt.find(".//xbrli:startDate", ns).text
-                sd = datetime.datetime.fromisoformat(sd).date()
-                ed = ent_elt.find(".//xbrli:endDate", ns).text
-                ed = datetime.datetime.fromisoformat(ed).date()
-                rels.append(Period(sd, ed))
-            except:
-                pass
-
-            try:
-                inst = ent_elt.find(".//xbrli:instant", ns).text
-                inst = datetime.datetime.fromisoformat(inst).date()
-                rels.append(Instant(inst))
-            except:
-                pass
-
-        for seg_elt in ctxt_elt.findall(".//xbrli:segment", ns):
-            for em_elt in seg_elt.findall(".//xbrldi:explicitMember", ns):
-
-                dimension = to_qname(em_elt, em_elt.get("dimension"))
-                value = to_qname(em_elt, em_elt.text.strip())
-
-                rels.append(Dimension(dimension, value))
-
-        ctxt = i.get_context(rels)
-
-        # This might relable another context.
-        ctxt.id = id
-
-        contexts[id] = ctxt
-
-    continuation = {}
-
-    for elt in doc.findall(".//ix:continuation", ns):
-        cid = elt.get("id")
-        continuation[cid] = elt
-
-    for elt in doc.findall(".//ix:nonNumeric", ns):
-        name = to_qname(elt, elt.get("name"))
-        cont = elt.get("continuedAt")
-        ctxt = contexts[elt.get("contextRef")]
-        key = (ctxt, name)
-        v = NonNumeric()
-        v.name = name
-        v.context = ctxt
-        v.elements = [elt]
-
-        format = elt.get("format")
-        if format:
-            v.format = to_qname(elt, format)
-
-        ctxt.values[name] = v
-        values[key] = v
-
-        while cont != None:
-            contelt = continuation[cont]
-            for s in contelt:
-                v.elements.append(s)
-            cont = contelt.get("continuedAt")
-
-    for elt in doc.findall(".//ix:nonFraction", ns):
-        name = to_qname(elt, elt.get("name"))
-        ctxt = contexts[elt.get("contextRef")]
-        cont = elt.get("continuedAt")
-        key = (ctxt, name)
-
-        try:
-            scale = elt.get("scale")
-            scale = 10 ** int(scale)
-        except:
-            scale = 1
-
-        v = NonFraction()
-        v.name = name
-        v.context = ctxt
-
-        v.decimals = elt.get("decimals")
-
-        format = elt.get("format")
-        if format:
-            v.format = to_qname(elt, format)
-        else:
-            v.format = None
-
-        v.scale = scale
-        v.elements = [elt]
-        v.unit = units[elt.get("unitRef")]
-        ctxt.values[name] = v
-        values[key] = v
-
-        while cont != None:
-            contelt = continuation[cont]
-            for s in contelt:
-                v.elements.append(s)
-            cont = contelt.get("continuedAt")
-
-    i.units = units
-    i.values = values
-    i.contexts = contexts
-
-    return i
+    return XbrlInstance.parse(doc)

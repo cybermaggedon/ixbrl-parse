@@ -23,7 +23,7 @@ parser.add_argument('input', metavar='input', nargs=1,
                     help='Input iXBRL file')
 parser.add_argument('--format', '-f',
                     default="hierarchy",
-                    help="Output format, one of 'flat', 'hierarchy' (default: flat)")
+                    help="Output format, one of 'flat', 'hierarchy' (default: hierarchy)")
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
