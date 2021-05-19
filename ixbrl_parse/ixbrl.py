@@ -453,13 +453,19 @@ class Context:
     def get_values_df(self):
         return dataframe.values_to_df(self.values)
 
-    def context_iter(self):
+    def context_iter(self, level=0):
 
-        yield self
+        """Returns a generator to iterate over all contexts.
 
-        for c in self.children.values():
-            for i in c.context_iter():
-                yield i
+        Yields (relationship, context, level : int).
+        """
+
+        for r, c in self.children.items():
+
+            yield r, c, level
+
+            for r, c, l in c.context_iter(level + 1):
+                yield r, c, l
 
 class Value:
     """An iXBRL value"""
@@ -703,9 +709,10 @@ class XbrlInstance:
         return ncx
 
     def context_iter(self):
-
-        for c in self.root.context_iter():
-            yield c
+        """Returns a generator to iterate over all contexts.
+        Yields (relationship, context, level : int).
+        """
+        return self.root.context_iter()
 
     def get_entity_name(self):
 
@@ -764,6 +771,9 @@ class XbrlInstance:
             s.load_uri(uri, base_url)
 
         return s
+
+    def get_df(self):
+        return dataframe.instance_to_df(self)
 
     @staticmethod
     def parse(doc, base_url=None):
