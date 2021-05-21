@@ -956,8 +956,7 @@ class XbrlInstance:
 
             while cont != None:
                 contelt = continuation[cont]
-                for s in contelt:
-                    v.elements.append(s)
+                v.elements.append(contelt)
                 cont = contelt.get("continuedAt")
 
         for elt in doc.findall(".//ix:nonFraction", ns):
