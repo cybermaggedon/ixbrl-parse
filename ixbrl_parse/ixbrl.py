@@ -495,7 +495,9 @@ class Value:
     def recurse_elts(elt, lower=False):
         a = ""
         if elt.text:
-            a += elt.text + " "
+            # This is probably right, but causes some things to appear wrong.
+            a += elt.text 
+#            a += elt.text + " "
         for s in elt:
             a += Value.recurse_elts(s, True)
         if lower and elt.tail:

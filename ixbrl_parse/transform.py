@@ -71,7 +71,10 @@ states = {
     "WASHINGTON": "WA",
     "WEST VIRGINIA": "WV",
     "WISCONSIN": "WI",
-    "WYOMING": "WY"
+    "WYOMING": "WY",
+    # FIXME: Should not be here.
+    "QUEBEC": "A8",
+    "BRITISH COLUMBIA": "A1",
 }
 
 state_country = {
@@ -136,6 +139,7 @@ state_country = {
     "ONTARIO CANADA": "A6",
     "PRINCE EDWARD ISLAND CANADA": "A7",
     "QUEBEC CANADA": "A8",
+    "QUEBEC": "A8",
     "SASKATCHEWAN CANADA": "A9",
     "YUKON CANADA": "B0",
     "CANADA": "Z4",
@@ -372,6 +376,7 @@ state_country = {
     "UKRAINE": "2H",
     "UNITED ARAB EMIRATES": "C0",
     "UNITED KINGDOM": "X0",
+
     "UNITED STATES MINOR OUTLYING ISLANDS": "2J",
     "URUGUAY": "X3",
     "UZBEKISTAN": "2K",
@@ -379,13 +384,16 @@ state_country = {
     "VENEZUELA": "X5",
     "VIET NAM": "Q1",
     "VIRGIN ISLANDS BRITISH": "D8",
+    "BRITISH VIRGIN ISLANDS": "D8",
     "VIRGIN ISLANDS U.S.": "VI",
     "WALLIS AND FUTUNA": "X8",
     "WESTERN SAHARA": "U5",
     "YEMEN": "T7",
     "ZAMBIA": "Y4",
     "ZIMBABWE": "Y5",
-    "UNKNOWN ": "XX"
+    "UNKNOWN ": "XX",
+    # Probably shouldn't be here
+    "ENGLAND AND WALES": "X0",
 }
 
 countries = {
@@ -715,23 +723,25 @@ def datemonthdayyearen(pre, value):
     # (e.g. "January, March and April the 30th, 1969"), the transform
     # must match the first occurrence.
     value = value.strip()
+    value = re.split(r'[^a-zA-Z0-9]+', value)
+    value = " ".join(value)
     try:
-        value = datetime.datetime.strptime(value, "%B %d, %Y").date()
+        value = datetime.datetime.strptime(value, "%B %d %Y").date()
         return Date(value)
     except:
         pass
     try:
-        value = datetime.datetime.strptime(value, "%B %d , %Y").date()
+        value = datetime.datetime.strptime(value, "%b %d %Y").date()
         return Date(value)
     except:
         pass
     try:
-        value = datetime.datetime.strptime(value, "%b %d, %Y").date()
+        value = datetime.datetime.strptime(value, "%B %d %y").date()
         return Date(value)
     except:
         pass
     try:
-        value = datetime.datetime.strptime(value, "%b %d , %Y").date()
+        value = datetime.datetime.strptime(value, "%b %d %y").date()
         return Date(value)
     except:
         pass
@@ -741,6 +751,8 @@ def datemonthdayyearen(pre, value):
 
 def datemonthyearen(pre, value):
     value = value.strip()
+    value = re.split(r'[^a-zA-Z0-9]+', value)
+    value = " ".join(value)
     try:
         value = datetime.datetime.strptime(value, "%B %Y").date()
         return Date(value)
@@ -752,7 +764,7 @@ def datemonthyearen(pre, value):
     except:
         pass
     raise RuntimeError(
-        "Could not parse %s with datemontheyearen" % value
+        "Could not parse %s with datemonthyearen" % value
     )
 
 def datemonthdayen(pre, value):
@@ -963,7 +975,8 @@ def datelonguk(pre, value):
 
 def numwordsen(pre, value):
     value = value.strip()
-    if value in { "nil", "None", "none", "", "no", "No" }:
+    value = value.lower()
+    if value in { "nil", "none", "", "no", "null" }:
         value = 0
     else:
         value = number_parser.parse(value)
@@ -981,6 +994,13 @@ registry = {}
 
 registry[ET.QName(SEC_XFORM, "boolballotbox")] = boolballotbox
 registry[ET.QName(XBRL_XFORM_2015, "datemonthdayyearen")] = datemonthdayyearen
+
+# FIXME: A typo in a form, probably
+registry[ET.QName(XBRL_XFORM_2015, "datemonthedayyearen")] = datemonthdayyearen
+registry[ET.QName(XBRL_XFORM_2011, "datemonthedayyearen")] = datemonthdayyearen
+registry[ET.QName(XBRL_XFORM_2015, "datemontheyearen")] = datemonthyearen
+registry[ET.QName(XBRL_XFORM_2011, "datemontheyearen")] = datemonthyearen
+
 registry[ET.QName(XBRL_XFORM_2015, "datemonthdayen")] = datemonthdayen
 registry[ET.QName(XBRL_XFORM_2015, "datemonthyearen")] = datemonthyearen
 registry[ET.QName(XBRL_XFORM_2015, "datedaymonthyearen")] = datedaymonthyearen

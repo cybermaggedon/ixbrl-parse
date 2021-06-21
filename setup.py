@@ -23,7 +23,9 @@ setuptools.setup(
     install_requires=[
         "number_parser",
         "requests",
-        "lxml"
+        "lxml",
+	"rdflib",
+	"pandas"
     ],
     scripts=[
         "scripts/ixbrl-dump",
