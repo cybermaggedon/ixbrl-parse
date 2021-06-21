@@ -706,6 +706,14 @@ def boolballotbox(pre, value):
         )
     
 def datemonthdayyearen(pre, value):
+    # FIXME: Transforms English date in the format
+    # "Mon(th)*(D)D*(Y)Y(YY)" into W3C/ISO date standard "YYYY-MM-DD"
+    # format. Two-digit years are assumed to fall between 2000 and
+    # 2099 and one-digit years to fall between 2000 and 2009. The
+    # result must be a valid xs:date, so for example, "February 30th,
+    # 2009" is not permitted. When a date contains several month names
+    # (e.g. "January, March and April the 30th, 1969"), the transform
+    # must match the first occurrence.
     value = value.strip()
     try:
         value = datetime.datetime.strptime(value, "%B %d, %Y").date()
@@ -751,12 +759,12 @@ def datemonthdayen(pre, value):
     value = value.strip()
     try:
         value = datetime.datetime.strptime(value, "%B %d").date()
-        return Date(value)
+        return MonthDay(value.month, value.day)
     except:
         pass
     try:
         value = datetime.datetime.strptime(value, "%b %d").date()
-        return Date(value)
+        return MonthDay(value.month, value.day)
     except:
         pass
     raise RuntimeError(
@@ -888,6 +896,14 @@ def datemonthdayyear(pre, value):
     return Date(value)
 
 def datedaymonthyearen(pre, value):
+    # FIXME: Transforms English date in the format
+    # "(D)D*Mon(th)*(Y)Y(YY)" into W3C/ISO date standard "YYYY-MM-DD"
+    # format. Two-digit years are assumed to fall between 2000 and
+    # 2099 and one-digit years to fall between 2000 and 2009. The
+    # result must be a valid xs:date, so for example, "30 February
+    # 2009" is not permitted. When a date contains several month names
+    # (e.g. "30th day of January, March and April, 1969"), the
+    # transform must match the last occurrence.
     value = value.strip()
     value = re.sub("([0-9]+)st", "\\1", value)
     value = re.sub("([0-9]+)nd", "\\1", value)
