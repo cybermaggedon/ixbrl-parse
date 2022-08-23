@@ -935,11 +935,14 @@ def nocontent(pre, value):
 
 def numdotdecimal(pre, value):
     value = value.replace(",", "")
+
     if value == "-": value = "0"
+
+    if value in { "nil", "None", "none", "", "no", "No" }: value = 0
 
     # Must be non-negative
     value = abs(float(value))
-    f = Float(value * pre.scale)
+    f = Float(value * pre.scale * pre.sign)
     if pre.unit: f.unit = pre.unit
     return f
 
@@ -950,7 +953,7 @@ def numcommadot(pre, value):
     # Must be non-negative
     value = abs(float(value))
 
-    f = Float(value * pre.scale)
+    f = Float(value * pre.scale * pre.sign)
     if pre.unit: f.unit = pre.unit
     return f
 
@@ -980,7 +983,7 @@ def numwordsen(pre, value):
         value = 0
     else:
         value = number_parser.parse(value)
-    f = Float(float(value) * pre.scale)
+    f = Float(float(value) * pre.scale * pre.sign)
     if pre.unit: f.unit = pre.unit
     return f
 

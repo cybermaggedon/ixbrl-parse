@@ -561,8 +561,9 @@ class NonFraction(Value):
             value = transform.transform(self, raw)
         else:
             if raw in { "nil", "None", "none", "", "no", "No" }: raw = 0
-            value = Float(float(raw) * self.scale, self.unit)
+            value = Float(float(raw) * self.scale * self.sign, self.unit)
         return value
+
     def to_dict(self, schema=None):
         ret = {
             "value": self.to_value().get_value()
@@ -866,10 +867,10 @@ class XbrlInstance:
             try:
                 div_elt = unit_elt.find("xbrli:divide", ns)
                 num_elt = div_elt.find(
-                    "./xbrli:unitNumerator/xbrli:measure", ns
+                    "./xbrli:unitnumerator/xbrli:measure", ns
                 )
                 den_elt = div_elt.find(
-                    "./xbrli:unitDenominator/xbrli:measure", ns
+                    "./xbrli:unitdenominator/xbrli:measure", ns
                 )
 
                 unit = Divide(
@@ -978,6 +979,11 @@ class XbrlInstance:
             v.context = ctxt
 
             v.decimals = elt.get("decimals")
+
+            if elt.get("sign") == "-":
+                v.sign = -1
+            else:
+                v.sign = 1
 
             format = elt.get("format")
             if format:
