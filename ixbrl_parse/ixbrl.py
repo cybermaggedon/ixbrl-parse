@@ -867,6 +867,28 @@ class XbrlInstance:
             try:
                 div_elt = unit_elt.find("xbrli:divide", ns)
                 num_elt = div_elt.find(
+                    "./xbrli:unitNumerator/xbrli:measure", ns
+                )
+                den_elt = div_elt.find(
+                    "./xbrli:unitDenominator/xbrli:measure", ns
+                )
+
+                unit = Divide(
+                    Measure(to_qname(num_elt, num_elt.text)),
+                    Measure(to_qname(den_elt, den_elt.text))
+                )
+                unit.id = id
+
+                units[id] = unit
+
+                continue
+
+            except:
+                pass
+
+            try:
+                div_elt = unit_elt.find("xbrli:divide", ns)
+                num_elt = div_elt.find(
                     "./xbrli:unitnumerator/xbrli:measure", ns
                 )
                 den_elt = div_elt.find(
