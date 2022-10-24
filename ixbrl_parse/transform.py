@@ -935,6 +935,7 @@ def nocontent(pre, value):
 
 def numdotdecimal(pre, value):
     value = value.replace(",", "")
+    value = value.replace(" ", "")
 
     if value == "-": value = "0"
 
@@ -946,8 +947,16 @@ def numdotdecimal(pre, value):
     if pre.unit: f.unit = pre.unit
     return f
 
+def fixedzero(pre, value):
+    value = 0
+
+    f = Float(0)
+    if pre.unit: f.unit = pre.unit
+    return f
+
 def numcommadot(pre, value):
     value = value.replace(",", "")
+    value = value.replace(" ", "")
     if value == "-": value = 0
 
     # Must be non-negative
@@ -1033,6 +1042,8 @@ registry[ET.QName(XBRL_XFORM_2011, "booleantrue")] = booleantrue
 registry[ET.QName(XBRL_XFORM_2015, "nocontent")] = nocontent
 registry[ET.QName(XBRL_XFORM_2011, "nocontent")] = nocontent
 registry[ET.QName(XBRL_XFORM_2020, "num-dot-decimal")] = numdotdecimal
+registry[ET.QName(XBRL_XFORM_2015, "fixed-zero")] = fixedzero
+registry[ET.QName(XBRL_XFORM_2020, "fixed-zero")] = fixedzero
 registry[ET.QName(XBRL_XFORM_2015, "numdotdecimal")] = numdotdecimal
 registry[ET.QName(XBRL_XFORM_2011, "numdotdecimal")] = numdotdecimal
 registry[ET.QName(XBRL_XFORM_2015, "numcommadecimal")] = numdotdecimal
