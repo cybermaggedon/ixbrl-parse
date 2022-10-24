@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ixbrl-parse",
-    version="0.9.3",
+    version="0.9.4",
     author="Cybermaggedon",
     author_email="mark@cyberapocalypse.co.uk",
     description="Parse iXBRL files, can present in RDF",
@@ -19,7 +19,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    download_url = "https://github.com/cybermaggedon/ixbrl-parse/archive/refs/tags/v0.9.3.tar.gz",
+    download_url = "https://github.com/cybermaggedon/ixbrl-parse/archive/refs/tags/v0.9.4.tar.gz",
     install_requires=[
         "number_parser",
         "requests",
