@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ixbrl-parse",
-    version="0.10.0",
+    version="0.10.1",
     author="Cybermaggedon",
     author_email="mark@cyberapocalypse.co.uk",
     description="Parse iXBRL files, can present in RDF",
