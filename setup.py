@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ixbrl-parse",
-    version="0.9.4",
+    version="0.10.0",
     author="Cybermaggedon",
     author_email="mark@cyberapocalypse.co.uk",
     description="Parse iXBRL files, can present in RDF",
@@ -25,7 +25,8 @@ setuptools.setup(
         "requests",
         "lxml",
 	"rdflib",
-	"pandas"
+# 200MB dependency, not installing as standard
+#	"pandas"
     ],
     scripts=[
         "scripts/ixbrl-dump",
