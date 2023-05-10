@@ -14,7 +14,7 @@ import os
 from . import transform
 from . value import *
 from . schema import Schema
-from . import dataframe
+#from . import dataframe
 
 from rdflib import URIRef
 
