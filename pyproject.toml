@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 markdown = ["tabulate"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
 
 [project.urls]
 Homepage = "https://github.com/cybermaggedon/ixbrl-parse"
@@ -43,3 +44,28 @@ ixbrl-diff = "ixbrl_parse.cli:diff_main"
 
 [tool.setuptools.packages.find]
 include = ["ixbrl_parse*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+
+[tool.coverage.run]
+source = ["ixbrl_parse"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

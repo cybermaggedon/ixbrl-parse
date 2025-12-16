@@ -281,7 +281,12 @@ def to_rdf_main():
     for rel in rels:
         g.add((rel[0], rel[1], rel[2]))
 
-    print(g.serialize(format=args.format).decode("utf-8"))
+    result = g.serialize(format=args.format)
+    # Handle both old (bytes) and new (str) rdflib versions
+    if isinstance(result, bytes):
+        print(result.decode("utf-8"))
+    else:
+        print(result)
 
 
 def to_csv_main():
