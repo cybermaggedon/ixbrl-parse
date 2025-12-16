@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ixbrl-parse"
+version = "0.11.0"
+authors = [
+    {name = "Cybermaggedon", email = "mark@cyberapocalypse.co.uk"}
+]
+description = "Parse iXBRL files, can present in RDF"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "number_parser",
+    "requests",
+    "lxml",
+    "rdflib",
+]
+
+[project.optional-dependencies]
+markdown = ["tabulate"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
+
+[project.urls]
+Homepage = "https://github.com/cybermaggedon/ixbrl-parse"
+Download = "https://github.com/cybermaggedon/ixbrl-parse/archive/refs/tags/v0.9.4.tar.gz"
+
+[project.scripts]
+ixbrl-dump = "ixbrl_parse.cli:dump_main"
+ixbrl-report = "ixbrl_parse.cli:report_main"
+ixbrl-markdown = "ixbrl_parse.cli:markdown_main"
+ixbrl-to-rdf = "ixbrl_parse.cli:to_rdf_main"
+ixbrl-to-csv = "ixbrl_parse.cli:to_csv_main"
+ixbrl-to-json = "ixbrl_parse.cli:to_json_main"
+ixbrl-to-xbrl = "ixbrl_parse.cli:to_xbrl_main"
+ixbrl-to-kv = "ixbrl_parse.cli:to_kv_main"
+ixbrl-diff = "ixbrl_parse.cli:diff_main"
+
+[tool.setuptools.packages.find]
+include = ["ixbrl_parse*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+
+[tool.coverage.run]
+source = ["ixbrl_parse"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

@@ -28,8 +28,32 @@ Also, `accts.html` is a sample file created using
 
 ## Installation
 
+### From PyPI (when published)
+
+```bash
+pip install ixbrl-parse
 ```
-pip3 install git+https://github.com/cybermaggedon/ixbrl-parse
+
+### From source
+
+```bash
+pip install git+https://github.com/cybermaggedon/ixbrl-parse
+```
+
+### For development
+
+```bash
+git clone https://github.com/cybermaggedon/ixbrl-parse
+cd ixbrl-parse
+pip install -e ".[dev]"
+```
+
+The `dev` extra includes pytest and pytest-cov for running tests.
+
+For markdown report support:
+
+```bash
+pip install ixbrl-parse[markdown]
 ```
 
 ## Usage
@@ -86,8 +110,61 @@ ixbrl-to-xbrl accts.html
 
 ## API
 
-The `ixbrl-to-csv` file is a good starting point if you want to see how
-the API works.
+You can use the library directly in your Python code:
+
+```python
+from lxml import etree as ET
+from ixbrl_parse.ixbrl import parse
+
+# Parse an iXBRL file
+tree = ET.parse('accts.html')
+ixbrl = parse(tree)
+
+# Get data in various formats
+data_dict = ixbrl.to_dict()
+flat_data = ixbrl.flatten()
+rdf_triples = ixbrl.get_triples()
+
+# Access contexts and values
+for context in ixbrl.contexts.values():
+    print(context.entity, context.period)
+
+for value in ixbrl.values.values():
+    print(value.name, value.to_value())
+```
+
+See the CLI implementations in `ixbrl_parse/cli.py` for more examples.
+
+## Development
+
+### Running Tests
+
+The project includes a comprehensive pytest test suite:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=ixbrl_parse --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_ixbrl.py -v
+```
+
+See `tests/README.md` for more details on the test suite.
+
+### Building
+
+The project uses modern Python packaging with `pyproject.toml`:
+
+```bash
+# Build wheel and source distribution
+python -m build
+
+# Install in development mode
+pip install -e .
+```
 
 ## What next?
 
