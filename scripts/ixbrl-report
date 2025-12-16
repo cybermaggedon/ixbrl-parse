@@ -31,9 +31,16 @@ parser.add_argument('--verbose', '-v', action='store_true',
                     help='Turn on verbose output.')
 parser.add_argument('--base-url', '-base', '-u',
                     help='Base URL for further schema fetches')
+parser.add_argument('--lang', '-l', dest='lang_prefs',
+                    help='Comma-separated list of preferred language codes (e.g., "en,en-GB,cy"). Default: "en,en-GB,en-US,cy,cy-GB"')
 
 # Parse arguments
 args = parser.parse_args(sys.argv[1:])
+
+# Parse language preferences
+lang_prefs = None
+if args.lang_prefs:
+    lang_prefs = [lang.strip() for lang in args.lang_prefs.split(',')]
 
 tree = ET.parse(args.input[0])
 
@@ -80,7 +87,7 @@ def qname_repr(qname):
 
     return str(qname)
 
-schema = i.load_schema(args.base_url)
+schema = i.load_schema(args.base_url, lang_prefs=lang_prefs)
 
 def get_label(name):
 

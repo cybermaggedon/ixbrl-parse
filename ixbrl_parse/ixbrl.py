@@ -786,9 +786,9 @@ class XbrlInstance:
         """Return a list of RDF triples."""
         return self.root.get_triples(None, self.get_entity_name())
 
-    def load_schema(self, base_url=None):
+    def load_schema(self, base_url=None, lang_prefs=None):
 
-        s = Schema()
+        s = Schema(lang_prefs=lang_prefs)
 
         for uri in self.schemas:
             s.load_uri(uri, base_url)

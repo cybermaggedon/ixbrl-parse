@@ -21,7 +21,7 @@ class Schema:
     parameter is used to help resolve URLs.
     """
 
-    def __init__(self):
+    def __init__(self, lang_prefs=None):
         self.simple = {}
         self.complex = {}
         self.attribute_group = {}
@@ -30,6 +30,9 @@ class Schema:
         self.labels = {}
         self.label_arcs = {}
         self.label_loc = {}
+        # Language preferences: list of language codes in order of preference
+        # Default to English variants, then Welsh
+        self.lang_prefs = lang_prefs if lang_prefs else ["en", "en-GB", "en-US", "cy", "cy-GB"]
 
     @staticmethod
     def load(uri):
@@ -46,8 +49,22 @@ class Schema:
             lbl_id = self.label_arcs[id]
 
             LABEL = "http://www.xbrl.org/2003/role/label"
-            lbl = self.labels[(lbl_id, LABEL)]
-            return lbl
+
+            # Try each language preference in order
+            for lang in self.lang_prefs:
+                try:
+                    lbl = self.labels[(lbl_id, LABEL, lang)]
+                    return lbl
+                except KeyError:
+                    continue
+
+            # If no preferred language found, try to return any label
+            # by looking for any key that matches (lbl_id, LABEL, *)
+            for key, value in self.labels.items():
+                if key[0] == lbl_id and key[1] == LABEL:
+                    return value
+
+            return None
 
         except Exception as e:
             return None
@@ -102,7 +119,9 @@ class Schema:
         for elt in tree.findall("labelLink/label", nsmap):
             lbl = elt.get("{%s}label" % nsmap["xlink"])
             role = elt.get("{%s}role" % nsmap["xlink"])
-            self.labels[(lbl, role)] = elt.text
+            lang = elt.get("{http://www.w3.org/XML/1998/namespace}lang", "en")
+            # Store labels with language as part of the key
+            self.labels[(lbl, role, lang)] = elt.text
 
     def load_uri(self, uri, base_uri=None):
 
