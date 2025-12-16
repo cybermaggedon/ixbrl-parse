@@ -23,22 +23,23 @@ dependencies = [
     "rdflib",
 ]
 
+[project.optional-dependencies]
+markdown = ["tabulate"]
+
 [project.urls]
 Homepage = "https://github.com/cybermaggedon/ixbrl-parse"
 Download = "https://github.com/cybermaggedon/ixbrl-parse/archive/refs/tags/v0.9.4.tar.gz"
 
-[tool.setuptools]
-script-files = [
-    "scripts/ixbrl-dump",
-    "scripts/ixbrl-report",
-    "scripts/ixbrl-markdown",
-    "scripts/ixbrl-to-rdf",
-    "scripts/ixbrl-to-csv",
-    "scripts/ixbrl-to-json",
-    "scripts/ixbrl-to-xbrl",
-    "scripts/ixbrl-to-kv",
-    "scripts/ixbrl-diff",
-]
+[project.scripts]
+ixbrl-dump = "ixbrl_parse.cli:dump_main"
+ixbrl-report = "ixbrl_parse.cli:report_main"
+ixbrl-markdown = "ixbrl_parse.cli:markdown_main"
+ixbrl-to-rdf = "ixbrl_parse.cli:to_rdf_main"
+ixbrl-to-csv = "ixbrl_parse.cli:to_csv_main"
+ixbrl-to-json = "ixbrl_parse.cli:to_json_main"
+ixbrl-to-xbrl = "ixbrl_parse.cli:to_xbrl_main"
+ixbrl-to-kv = "ixbrl_parse.cli:to_kv_main"
+ixbrl-diff = "ixbrl_parse.cli:diff_main"
 
 [tool.setuptools.packages.find]
 include = ["ixbrl_parse*"]
